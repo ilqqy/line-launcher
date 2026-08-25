@@ -21,13 +21,13 @@ Lines and text on a transparent surface -- no panel, no blur, no backdrop.
 ## Run
 
 ```sh
-nix run github:ilyanix/line-launcher
+nix run github:ilqqy/line-launcher
 ```
 
 Or drop the binary into a shell:
 
 ```sh
-nix shell github:ilyanix/line-launcher
+nix shell github:ilqqy/line-launcher
 line-launcher
 ```
 
@@ -49,7 +49,7 @@ shorter.
 
 ```nix
 {
-  inputs.line-launcher.url = "github:ilyanix/line-launcher";
+  inputs.line-launcher.url = "github:ilqqy/line-launcher";
 
   # ... inside your home-manager configuration:
   imports = [ inputs.line-launcher.homeManagerModules.default ];

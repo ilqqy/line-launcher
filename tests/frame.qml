@@ -17,6 +17,21 @@ ShellRoot {
             + (ok ? "" : "  expected " + expected + ", got " + actual));
     }
 
+    // Every signal the frame has emitted, newest last. A real QKeyEvent cannot
+    // be built from QML, so the keymap is driven through handleKey() and read
+    // back from here.
+    property var signals: []
+
+    function pressed(key: int, modifiers: int): string {
+        suite.signals = [];
+        frame.handleKey(key, modifiers);
+        return suite.signals.join("+");
+    }
+
+    function record(name: string) {
+        suite.signals = suite.signals.concat([name]);
+    }
+
     Item {
         id: host
         width: 1920
@@ -27,6 +42,12 @@ ShellRoot {
             width: host.width
             height: implicitHeight
             completion: "Steam"
+
+            onMoveUp: suite.record("up")
+            onMoveDown: suite.record("down")
+            onAccepted: suite.record("accepted")
+            onCancelled: suite.record("cancelled")
+            onCompletionRequested: suite.record("completion")
         }
     }
 
@@ -62,11 +83,30 @@ ShellRoot {
             frame.completion = "Steam";
             suite.check("empty query shows no ghost", frame.ghostVisible, false);
 
-            // --- Tab accepts into the real field --------------------------
+            // --- accepting the completion ---------------------------------
+            // No key is bound to this since Tab became a move key; the field
+            // API is still what does the writing.
             frame.inputItem.text = "ste";
             frame.acceptCompletion();
-            suite.check("Tab writes the completion", frame.inputItem.text, "Steam");
-            suite.check("Tab leaves the caret at the end", frame.inputItem.cursorPosition, 5);
+            suite.check("acceptCompletion writes the completion", frame.inputItem.text, "Steam");
+            suite.check("acceptCompletion leaves the caret at the end", frame.inputItem.cursorPosition, 5);
+
+            // --- the keymap -----------------------------------------------
+            suite.check("Tab moves down", suite.pressed(Qt.Key_Tab, Qt.NoModifier), "down");
+            suite.check("Shift+Tab moves up",
+                suite.pressed(Qt.Key_Tab, Qt.ShiftModifier), "up");
+            suite.check("Backtab moves up",
+                suite.pressed(Qt.Key_Backtab, Qt.ShiftModifier), "up");
+            suite.check("Down still moves down", suite.pressed(Qt.Key_Down, Qt.NoModifier), "down");
+            suite.check("Ctrl+n still moves down",
+                suite.pressed(Qt.Key_N, Qt.ControlModifier), "down");
+            suite.check("Up still moves up", suite.pressed(Qt.Key_Up, Qt.NoModifier), "up");
+            suite.check("Enter accepts", suite.pressed(Qt.Key_Return, Qt.NoModifier), "accepted");
+            suite.check("Esc cancels", suite.pressed(Qt.Key_Escape, Qt.NoModifier), "cancelled");
+            // "down" alone, not "down+completion": Tab moves and does nothing
+            // else. A plain letter is consumed by neither.
+            suite.check("a plain letter is left to the field",
+                frame.handleKey(Qt.Key_A, Qt.NoModifier), false);
 
             // --- pixel snapping -------------------------------------------
             Config.devicePixelRatio = 2;

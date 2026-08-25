@@ -12,7 +12,8 @@ Lines and text on a transparent surface -- no panel, no blur, no backdrop.
 - Rofi's drun matching and launch history, ported verbatim (see
   [Credits](#credits)) -- point it at `~/.cache/rofi3.druncache` and your
   existing rofi history carries over.
-- Ghost completion: typing `ste` draws `am` after the caret.
+- Ghost completion: typing `ste` draws `am` after the caret. A hint only --
+  no key accepts it, since Tab moves the selection.
 - Colours follow pywal / wallust / matugen at runtime. Change the wallpaper and
   a running launcher recolours -- no restart, no rebuild.
 - Works as a dmenu replacement when stdin is a pipe.
@@ -91,6 +92,7 @@ shorter.
     whiskerLength = 50;
     hookLength = 16;
     visibleItems = 5;
+    listPerspective = 0;                # 1 fans the rows away from you
     maxCharacters = 60;                 # dmenu column truncation
 
     terminal = "kitty -e";              # for Terminal=true entries
@@ -130,6 +132,7 @@ The modules only write a JSON file. Put the same thing at
   "whiskerLength": 50,
   "hookLength": 16,
   "visibleItems": 5,
+  "listPerspective": 0,
   "maxCharacters": 60,
   "terminal": "kitty -e",
   "actions": []
@@ -339,15 +342,29 @@ kept in `$XDG_STATE_HOME/line-launcher/history.json`, capped at 200 entries.
 
 | Key | Action |
 | --- | --- |
-| `Up` / `Ctrl+p` | previous result |
-| `Down` / `Ctrl+n` | next result |
-| `Tab` | accept the ghost completion into the input |
+| `Up` / `Ctrl+p` / `Shift+Tab` | previous result |
+| `Down` / `Ctrl+n` / `Tab` | next result |
 | `Enter` | launch the selection (twice, for a `confirm` action) |
 | `Esc` | close |
+
+Tab and Shift+Tab used to accept the ghost completion. Nothing is bound to
+that now -- the ghost is still drawn as a hint, but it is not something you
+can take.
+
+It opens by fading up while each side of the frame -- whisker and hook
+together -- drifts in from a tenth of the way out towards the screen edge, over
+320ms.
 
 Enter and Escape close differently on purpose: Enter collapses the frame -- the
 hooks meet, the whiskers slide off screen, the outline flattens to a line --
 while Escape just fades in place.
+
+The selection outline travels on the same 150ms curve the lane slides on, and
+lands on its row rather than past it. While a key is held the lane shortens
+that slide to the repeat's own interval, so the rows keep sliding smoothly
+instead of teleporting and nothing falls behind. Rows fade with how far down
+the lane they sit, not with their distance from the selection -- the lane looks
+the same wherever the selection is.
 
 Hyprland:
 
@@ -363,8 +380,17 @@ bind = SUPER, R, exec, line-launcher
 | `--no-ghost` | disable ghost completion text |
 | `--prompt TEXT` | placeholder text for the input field |
 | `--config PATH` | use an alternate `config.json` |
+| `-n`, `--namespace NAME` | layer-shell namespace for the surface (default `line-launcher`) |
 
 Flags override the config file, which overrides the built-in defaults.
+
+The namespace is what a compositor matches its layer rules against, and it is
+used exactly as given -- `line-launcher -n wave-launcher` produces a surface
+named `wave-launcher` and nothing else:
+
+```
+layerrule = animation slide, wave-launcher
+```
 
 ## Icons
 

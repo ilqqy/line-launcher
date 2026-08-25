@@ -37,6 +37,7 @@ Singleton {
         "whiskerLength": 50,
         "hookLength": 16,
         "visibleItems": 5,
+        "listPerspective": 0,
         "maxCharacters": 60,
         "terminal": null,
         "commandAccent": null,
@@ -154,6 +155,13 @@ Singleton {
         ? root.itemsOverride
         : root.data.visibleItems
 
+    // How much of the receding fan the result lane draws. 0 is a straight
+    // dropdown -- even steps, no tilt, no narrowing -- and 1 is the full
+    // projection. Clamped, since the geometry between the two is a blend and
+    // anything outside it is not.
+    readonly property real listPerspective:
+        Math.max(0, Math.min(1, root.data.listPerspective))
+
     // Result-row metrics. Derived from the font size rather than exposed as
     // options: they are proportions of the type, not independent knobs.
     readonly property int iconSize: Math.round(root.fontSize * 1.5)
@@ -220,6 +228,13 @@ Singleton {
 
     readonly property bool ghostEnabled: !root.ghostDisabled
     readonly property string prompt: Quickshell.env("LINE_LAUNCHER_PROMPT") || ""
+
+    // The layer-shell namespace, handed to the compositor verbatim: whatever
+    // --namespace was given, that is the string Hyprland's layerrules match
+    // on. Empty only if someone exports the variable empty, and layer-shell
+    // wants a name, so the default stands in for that.
+    readonly property string namespace: Quickshell.env("LINE_LAUNCHER_NAMESPACE") || "line-launcher"
+
     readonly property int maxCharacters: root.data.maxCharacters
     readonly property string terminal: root.data.terminal || ""
     readonly property var actions: root.data.actions || []

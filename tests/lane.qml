@@ -112,6 +112,22 @@ ShellRoot {
                     list.targetLaneY, -list.rowStep);
                 suite.check("Down " + n + ": selection pinned to the bottom slot",
                     list.currentIndex - list.firstVisible, n - 1);
+
+                // The outline's target is the pinned slot, taken straight from
+                // the selection and the window -- not from rowBaseY(), which is
+                // built on the animated laneY. Read one frame into the slide,
+                // it is the same number it will be when the slide ends: the
+                // outline holds still and the rows travel under it.
+                //
+                // This is the regression. With the target measured off the
+                // lane, it carried the lane's easing error, the outline drifted
+                // with every slide, and under a held key it ended up rows away
+                // from the selection it was marking.
+                suite.check("mid-slide: outline target is the pinned slot, "
+                        + "not the lane's position",
+                    list.outlineTarget, n - 1);
+                suite.check("mid-slide: the lane is genuinely still moving",
+                    list.laneY !== list.targetLaneY, true);
                 return;
             }
 
@@ -134,6 +150,30 @@ ShellRoot {
                 suite.check("lane back at rest", list.laneY, 0);
                 suite.check("rows back to their original positions",
                     JSON.stringify(suite.snapshot()), JSON.stringify(suite.baseline));
+
+                // --- the default lane: straight down ---------------------
+                //
+                // listPerspective defaults to 0, and at 0 the whole projection
+                // has to disappear rather than merely shrink: even steps, rows
+                // at their untransformed positions, full width at every slot.
+                suite.check("lane is flat by default", list.perspective, 0);
+                for (let slot = 0; slot < n; slot++) {
+                    suite.near("slot " + slot + ": flat row sits on the plain grid",
+                        list.projectedCentre(slot),
+                        slot * list.rowStep + list.rowHeight / 2, 0.01);
+                    suite.near("slot " + slot + ": flat row keeps its full width",
+                        list.projectionFor(slot), 1, 0.0001);
+
+                    // The tilt is what the fan puts on a row away from the
+                    // selection; flat means a distant row is drawn exactly
+                    // where the outline would go for it.
+                    suite.near("slot " + slot + ": flat row is untilted",
+                        list.projectedRowCentre(slot, 3),
+                        slot * list.rowStep + list.rowHeight / 2, 0.01);
+                }
+
+                // --- the fan, for anyone who turns it on -------------------
+                list.perspective = 1;
 
                 // The perspective must compress the step downwards, and must
                 // do so without touching the untransformed positions above.

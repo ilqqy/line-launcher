@@ -46,11 +46,63 @@ Item {
     // Plain easing, not a spring: this drives row positions.
     property real laneY: root.targetLaneY
 
+    readonly property int slideDuration: 150
+
     Behavior on laneY {
         NumberAnimation {
-            duration: 150
+            // Shortened, never switched off: see the held-key note below.
+            duration: root.chasing ? root.chaseDuration : root.slideDuration
             easing.type: Easing.OutCubic
         }
+    }
+
+    // ----------------------------------------------------------- held keys
+
+    // A held key repeats every ~33ms, and the lane's slide takes 150ms, so
+    // under auto-repeat each move restarts a journey the last one never
+    // finished and the shortfall accumulates. Measured before this existed,
+    // holding a key put the outline 1.9 rows behind the selection going down
+    // and 4.1 rows off going up -- the lane sliding somewhere the selection
+    // was not, and the selection itself pushed out of the visible window.
+    //
+    // The travel is shortened rather than switched off. Cutting the animation
+    // outright does fix the drift, but then the rows teleport a step at a time
+    // and the names snap from slot to slot. Instead both the lane and the
+    // outline are given the repeat's own interval to cover one step: each move
+    // lands about when the next arrives, so nothing accumulates and the lane
+    // still slides continuously under the names.
+    //
+    // Everything returns to the full 150ms slide on the first move that
+    // arrives after a gap -- which is the move the user is actually watching,
+    // rather than one frame of a blur.
+    property double lastMoveAt: 0
+    property bool chasing: false
+
+    // How long one step gets while the key is held: the repeat's own interval,
+    // so a step finishes as the next one starts and no residue carries over.
+    // Anything longer leaves a fraction of every step unfinished and the
+    // fractions add up -- at a 50ms floor against a 33ms repeat the outline
+    // still ended up 1.4 rows out.
+    //
+    // Floored at two frames rather than at nothing: that is the shortest
+    // travel that is still travel, and it keeps a very fast repeat rate from
+    // turning back into the teleport this replaced. Capped at the resting
+    // slide, so this only ever shortens.
+    readonly property int minTravel: 33
+
+    property int chaseDuration: root.slideDuration
+
+    function noteMove() {
+        const now = Date.now();
+        const gap = now - root.lastMoveAt;
+
+        root.chasing = gap < root.slideDuration;
+        if (root.chasing) {
+            root.chaseDuration =
+                Math.max(root.minTravel, Math.min(root.slideDuration, gap));
+        }
+
+        root.lastMoveAt = now;
     }
 
     function ensureVisible() {
@@ -61,8 +113,16 @@ Item {
         }
     }
 
-    onCurrentIndexChanged: root.ensureVisible()
+    onCurrentIndexChanged: {
+        root.noteMove();
+        root.ensureVisible();
+    }
+
     onResultsChanged: {
+        // A new query is not a held key: the selection returns to the top on
+        // the full slide however fast the typing was.
+        root.chasing = false;
+        root.lastMoveAt = 0;
         root.firstVisible = 0;
         root.ensureVisible();
     }
@@ -75,14 +135,24 @@ Item {
 
     // ---------------------------------------------------------- perspective
 
-    readonly property real anglePerStep: 22
+    // How much of the projection to apply, 0 to 1. At 0 the lane is a straight
+    // dropdown: no tilt, no recede, and every function below collapses to the
+    // flat case -- projectionFor returns 1, projectedCentre becomes the plain
+    // row grid, and rowMatrix comes out an identity. Everything derives from
+    // this one number rather than being switched on separately, so the flat
+    // lane and the fan cannot disagree about where a row sits.
+    // Writable, unlike the rest of the geometry: tests/lane.qml drives both the
+    // flat lane and the full fan through it in one run.
+    property real perspective: Config.listPerspective
+
+    readonly property real anglePerStep: 22 * root.perspective
     readonly property real maxAngle: 55
     readonly property real perspectiveDepth: 800
 
     // How far each row below the window top is pushed away from the viewer.
     // The vertical step shrinking with distance falls out of the projection of
     // that depth; it is not applied to the positions directly.
-    readonly property real depthPerStep: 60
+    readonly property real depthPerStep: 60 * root.perspective
 
     function depthFor(slot: real): real {
         return -root.depthPerStep * Math.max(0, slot);
@@ -101,9 +171,28 @@ Item {
     implicitHeight: root.projectedCentre(root.visibleItems - 1)
         + root.rowHeight / (2 * root.projectionFor(root.visibleItems - 1))
 
-    function opacityFor(distance: real): real {
-        // Effectively zero by the third neighbour.
-        return Math.max(0, 1 - Math.pow(Math.abs(distance) / 3.2, 1.35));
+    // How faint the last row in the window is. The ramp runs from full strength
+    // at the top slot down to this at the bottom one.
+    readonly property real tailOpacity: 0.45
+
+    // Rows fade with how far down the lane they sit, not with how far they are
+    // from the selection. Keying it to the selection meant the whole list
+    // breathed every time the highlight moved -- rows brightening and dimming
+    // under a selection that was itself already marked, by the outline, in the
+    // accent colour. The lane now looks the same wherever the selection is.
+    //
+    // Takes a slot, so it is a property of the row's place in the window and
+    // fractional while the lane slides.
+    function opacityFor(slot: real): real {
+        // Above the top of the window: on its way out.
+        if (slot < 0) return Math.max(0, 1 + slot);
+
+        const span = Math.max(1, root.visibleItems - 1);
+        if (slot <= span) return 1 - (1 - root.tailOpacity) * (slot / span);
+
+        // The spare slot below the window, so a row scrolling in rises from
+        // nothing rather than appearing at the tail strength.
+        return Math.max(0, root.tailOpacity * (1 - (slot - span)));
     }
 
     // True perspective, not a scale. The row is tilted about its own centre by
@@ -219,7 +308,7 @@ Item {
             y: Config.snap(root.rowBaseY(row.absoluteIndex))
 
             visible: row.present && row.opacity > 0.01
-            opacity: root.collapsing ? 0 : root.opacityFor(row.distance)
+            opacity: root.collapsing ? 0 : root.opacityFor(row.slot)
 
             name: row.entry ? row.entry.name : ""
             iconSource: row.entry ? row.entry.icon : ""
@@ -254,9 +343,24 @@ Item {
         width: root.laneWidth / outline.projection
         x: Config.snap(root.laneX + (root.laneWidth - outline.width) / 2)
 
-        // Travels in lane slots, so it stays glued to the pinned row while the
-        // lane itself is sliding.
-        targetPosition: root.rowBaseY(root.currentIndex) / root.rowStep
+        // The selection's slot in the visible window, and nothing else.
+        //
+        // This used to be measured off rowBaseY(), which is built on the
+        // animated `laneY` -- so it came out as the window slot plus whatever
+        // the lane's easing had not caught up on yet, and the outline drifted
+        // along with that error every time the lane slid. Under a held key the
+        // error never resolved and the highlight ended up rows away from the
+        // selection.
+        //
+        // Both terms here change only when something really happens. Moving
+        // inside the window changes currentIndex, and the outline travels one
+        // row. Scrolling changes both by one, which cancels: the selection is
+        // pinned to the edge, so the outline holds still and the rows slide
+        // underneath it -- which is what "the lane stays put" meant all along.
+        targetPosition: root.currentIndex - root.firstVisible
+
+        // The same clock the rows move on, held keys included.
+        travelDuration: root.chasing ? root.chaseDuration : root.slideDuration
 
         // Projected to match whichever row it is sitting on.
         centreY: root.projectedCentre(outline.position)
@@ -281,6 +385,7 @@ Item {
     readonly property alias settling: outline.settling
     readonly property alias outlineCentre: outline.centreY
     readonly property alias outlinePosition: outline.position
+    readonly property alias outlineTarget: outline.targetPosition
     readonly property alias outlineVelocity: outline.velocity
     readonly property alias outlineSamples: outline.sampleCount
     readonly property alias auraActive: outline.auraActive

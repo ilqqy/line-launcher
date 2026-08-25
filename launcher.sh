@@ -23,6 +23,10 @@ Options:
   --no-ghost        disable ghost completion text
   --prompt TEXT     placeholder text for the input field
   --config PATH     use an alternate config.json
+  -n, --namespace NAME
+                    layer-shell namespace for the surface, used verbatim
+                    (default: line-launcher). Compositor rules that match on
+                    the namespace key off this.
   -h, --help        show this help
 
 When stdin is not a terminal, line-launcher lists the piped lines instead of
@@ -40,6 +44,7 @@ items=
 prompt=
 config=
 no_ghost=
+namespace=
 
 while [ $# -gt 0 ]; do
 	case $1 in
@@ -70,6 +75,15 @@ while [ $# -gt 0 ]; do
 		config=${1#*=}
 		shift
 		;;
+	-n | --namespace)
+		[ $# -ge 2 ] || { echo "line-launcher: --namespace needs a value" >&2; exit 2; }
+		namespace=$2
+		shift 2
+		;;
+	--namespace=* | -n=*)
+		namespace=${1#*=}
+		shift
+		;;
 	--no-ghost)
 		no_ghost=1
 		shift
@@ -98,6 +112,10 @@ fi
 
 if [ -n "$prompt" ]; then
 	export LINE_LAUNCHER_PROMPT=$prompt
+fi
+
+if [ -n "$namespace" ]; then
+	export LINE_LAUNCHER_NAMESPACE=$namespace
 fi
 
 if [ -n "$no_ghost" ]; then

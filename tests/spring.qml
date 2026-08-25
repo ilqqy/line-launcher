@@ -1,10 +1,16 @@
-// Proves that the selection spring stops doing per-frame work once it settles.
+// Proves that the selection outline stops doing per-frame work once it lands,
+// and that it lands on its row rather than past it.
 //
 // The shell's only per-frame cost is SelectionOutline's velocity sampler, and
-// it is bound to `spring.running`. This test drives a selection change, waits
-// for the spring to finish, then asserts the sample counter has stopped
+// it is bound to `travel.running`. This test drives a selection change, waits
+// for the travel to finish, then asserts the sample counter has stopped
 // rising -- a shell component that repaints forever drains a laptop battery,
 // and that is not something to check by eye.
+//
+// The outline used to travel on a spring, which overshot its row by ~10% of
+// the distance by design. That is gone: a highlight that sits past the row it
+// marks is wrong at every frame until it settles, and under a held key the
+// lag compounded until the selection left the visible window entirely.
 import QtQuick
 import Quickshell
 
@@ -52,9 +58,10 @@ ShellRoot {
         return out;
     }
 
-    // Watches how far past the target the outline travels. The resting place
-    // is the projected centre of the target row, not its untransformed
-    // position -- the perspective compresses the lane downwards.
+    // Watches how far past the target the outline travels -- which must now be
+    // nowhere at all. The resting place is the projected centre of the target
+    // row, not its untransformed position: with listPerspective turned up, the
+    // projection compresses the lane downwards.
     readonly property real targetCentre: list.projectedCentre(list.currentIndex - list.firstVisible)
 
     FrameAnimation {
@@ -83,7 +90,8 @@ ShellRoot {
 
             switch (suite.phase) {
             case 1:
-                suite.check("idle at startup: spring not running", !list.settling, "spring was running");
+                suite.check("idle at startup: nothing travelling", !list.settling,
+                    "the outline was already moving");
                 // One row down: the common case, and what the overshoot
                 // band below is tuned against.
                 observer.running = true;
@@ -91,23 +99,27 @@ ShellRoot {
                 break;
 
             case 2:
-                suite.check("spring is running while travelling", list.settling, "spring did not start");
+                suite.check("travel is running while travelling", list.settling,
+                    "the travel animation did not start");
                 suite.check("velocity is non-zero while travelling",
                     Math.abs(list.outlineVelocity) > 0, "velocity stayed at 0");
                 break;
 
             case 25:
-                // ~1.4s after the move, against a ~250ms settle: everything
+                // ~1.4s after the move, against a 150ms travel: everything
                 // must be at rest.
                 observer.running = false;
-                suite.check("spring stopped", !list.settling, "spring still running");
+                suite.check("travel stopped", !list.settling, "still travelling");
                 suite.check("velocity reset to zero", list.outlineVelocity === 0,
                     "velocity was " + list.outlineVelocity);
                 suite.check("outline landed on the target row",
                     Math.abs(list.outlineCentre - suite.targetCentre) < 1,
                     "off by " + (list.outlineCentre - suite.targetCentre));
-                suite.check("overshoot is 3-4px",
-                    suite.peakOvershoot >= 3.0 && suite.peakOvershoot <= 4.0,
+                // Eased travel, not a spring: the outline approaches its row
+                // and stops on it. Half a pixel of tolerance for the snap to
+                // the device grid, and nothing more.
+                suite.check("never travels past the row",
+                    suite.peakOvershoot <= 0.5,
                     "peak overshoot was " + suite.peakOvershoot.toFixed(2) + "px");
                 suite.settledSamples = list.outlineSamples;
                 break;

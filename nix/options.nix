@@ -266,6 +266,17 @@ in rec {
       description = "Number of result rows shown before the lane starts scrolling.";
     };
 
+    listPerspective = mkOption {
+      type = types.numbers.between 0 1;
+      default = 0;
+      description = ''
+        How much of the receding fan the result lane draws. 0, the default, is
+        a straight dropdown: even steps, no tilt, rows at full width. 1 is the
+        full projection, where rows below the first recede and converge.
+      '';
+      example = 1;
+    };
+
     maxCharacters = mkOption {
       type = types.ints.positive;
       default = 60;
@@ -354,6 +365,7 @@ in rec {
           whiskerLength
           hookLength
           visibleItems
+          listPerspective
           maxCharacters
           terminal
           ;

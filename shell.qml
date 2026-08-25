@@ -204,6 +204,14 @@ ShellRoot {
         shell.confirming = false;
     }
 
+    // -------------------------------------------------------- open handling
+
+    // False until the window is on screen for the first time. Everything the
+    // entrance animates rests at its off state while this is false, so the
+    // animation starts from the first visible frame rather than running while
+    // the surface is still hidden waiting on the monitor.
+    property bool entered: false
+
     // -------------------------------------------------------- close handling
 
     readonly property int closeNone: 0
@@ -286,7 +294,7 @@ ShellRoot {
 
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-        WlrLayershell.namespace: "line-launcher"
+        WlrLayershell.namespace: Config.namespace
 
         // Anchoring all four sides gives a full-screen surface. The visible
         // content is a few hundred pixels wide in the middle of it, so the
@@ -303,9 +311,19 @@ ShellRoot {
         color: "transparent"
         visible: shell.screenResolved
 
-        onVisibleChanged: if (window.visible) frame.focusInput()
+        onVisibleChanged: {
+            if (!window.visible) return;
+            frame.focusInput();
+            shell.entered = true;
+        }
 
-        Component.onCompleted: Config.devicePixelRatio = Screen.devicePixelRatio
+        Component.onCompleted: {
+            Config.devicePixelRatio = Screen.devicePixelRatio;
+            // onVisibleChanged does not fire for a window that was already
+            // visible when it was built -- which is the case whenever the
+            // screen resolved before this component completed.
+            if (window.visible) shell.entered = true;
+        }
 
         Connections {
             target: Screen
@@ -322,14 +340,22 @@ ShellRoot {
             height: frame.implicitHeight + Config.frameToListGap + list.implicitHeight
 
             clip: false
-            opacity: shell.closing === shell.closeNone ? 1 : 0
+            readonly property bool open: shell.closing === shell.closeNone && shell.entered
+
+            opacity: content.open ? 1 : 0
 
             Behavior on opacity {
                 NumberAnimation {
                     // Esc fades a little faster than the Enter collapse so the
-                    // two do not read as the same gesture.
-                    duration: shell.closing === shell.closeCollapse ? 160 : 110
-                    easing.type: Easing.InQuad
+                    // two do not read as the same gesture. The fade in runs on
+                    // the whiskers' own clock so the frame finishes arriving
+                    // and finishes appearing together.
+                    duration: shell.closing === shell.closeNone
+                        ? 320
+                        : (shell.closing === shell.closeCollapse ? 160 : 110)
+                    easing.type: shell.closing === shell.closeNone
+                        ? Easing.OutQuad
+                        : Easing.InQuad
                 }
             }
 
@@ -343,6 +369,7 @@ ShellRoot {
                 prefix: shell.activePrefix
                 completion: shell.ranked.length > 0 ? shell.ranked[0].name : ""
                 collapsing: shell.closing === shell.closeCollapse
+                revealed: shell.entered
 
                 onAccepted: shell.activate()
                 onCancelled: shell.close(shell.closeFade)

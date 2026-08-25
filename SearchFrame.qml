@@ -47,10 +47,43 @@ Item {
     signal cancelled()
     signal moveUp()
     signal moveDown()
+    // Nothing emits this since Tab became a move key. The ghost is still drawn
+    // and acceptCompletion() still works; it just has no key on it, so this is
+    // kept as the hook for whichever key takes the job next.
     signal completionRequested()
     // Emitted for every key press, so the shell can drop out of the confirm
     // state on "any other key".
     signal keyActivity(int key)
+
+    // ----------------------------------------------------- entry animation
+
+    // Raised by the shell once the window is actually on screen. The monitor
+    // is not known at component completion, so the window spends its first
+    // frames hidden; starting the entrance there would play it to nobody.
+    property bool revealed: false
+
+    // 1 is off-screen, 0 is home. Deliberately not `slide`: a close landing
+    // mid-entrance would then be two animations fighting over one property.
+    property real entry: root.revealed ? 0 : 1
+
+    Behavior on entry {
+        NumberAnimation {
+            // Slower than the 160ms close and eased the other way round: the
+            // whiskers arrive fast and settle, rather than leaving slowly.
+            duration: 320
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    // The distance each side covers on the way in: a tenth of the way out
+    // towards the screen edge, so the frame gathers itself rather than flying
+    // in from off-screen. Short travel over a long duration -- the strokes
+    // drift into place rather than snapping.
+    readonly property real entryDistance: root.width / 2 * 0.1
+
+    // Both strokes on a side move by this together, so the hook stays attached
+    // to the end of its whisker for the whole travel.
+    readonly property real entryOffset: root.entry * root.entryDistance
 
     // ------------------------------------------------------ close animation
 
@@ -127,13 +160,15 @@ Item {
         target: rightWhisker
     }
 
-    // The whiskers themselves never animate except on close.
+    // The strokes themselves only ever move on open and on close: each side --
+    // whisker and hook together -- gathers inwards on entry and leaves the
+    // same way.
     Rectangle {
         id: leftWhisker
         width: Config.whiskerLength
         height: root.stroke
         color: Theme.foreground
-        x: root.leftHookX - width - root.slide
+        x: root.leftHookX - width - root.slide - root.entryOffset
         y: root.strokeY
     }
 
@@ -142,7 +177,7 @@ Item {
         width: root.stroke
         height: Config.hookLength
         color: Theme.foreground
-        x: root.leftHookX
+        x: root.leftHookX - root.entryOffset
         y: root.hookY
     }
 
@@ -151,7 +186,7 @@ Item {
         width: root.stroke
         height: Config.hookLength
         color: Theme.foreground
-        x: root.rightHookX
+        x: root.rightHookX + root.entryOffset
         y: root.hookY
     }
 
@@ -160,7 +195,7 @@ Item {
         width: Config.whiskerLength
         height: root.stroke
         color: Theme.foreground
-        x: root.rightHookX + root.stroke + root.slide
+        x: root.rightHookX + root.stroke + root.slide + root.entryOffset
         y: root.strokeY
     }
 
@@ -251,27 +286,7 @@ Item {
             // suggestion and make Backspace delete characters the user never
             // typed.
             Keys.onPressed: event => {
-                root.keyActivity(event.key);
-
-                const ctrl = (event.modifiers & Qt.ControlModifier) !== 0;
-
-                if (event.key === Qt.Key_Escape) {
-                    root.cancelled();
-                    event.accepted = true;
-                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
-                        || (ctrl && event.key === Qt.Key_M)) {
-                    root.accepted();
-                    event.accepted = true;
-                } else if (event.key === Qt.Key_Up || (ctrl && event.key === Qt.Key_P)) {
-                    root.moveUp();
-                    event.accepted = true;
-                } else if (event.key === Qt.Key_Down || (ctrl && event.key === Qt.Key_N)) {
-                    root.moveDown();
-                    event.accepted = true;
-                } else if (event.key === Qt.Key_Tab) {
-                    root.completionRequested();
-                    event.accepted = true;
-                }
+                event.accepted = root.handleKey(event.key, event.modifiers);
             }
         }
 
@@ -311,6 +326,44 @@ Item {
     }
 
     // ---------------------------------------------------------------- API
+
+    // The whole keymap, in one place and off the event object: a QKeyEvent
+    // cannot be constructed from QML, so inline handling could only ever be
+    // tested by a real compositor delivering real keys. Takes what the event
+    // carries, returns whether the key was consumed.
+    function handleKey(key: int, modifiers: int): bool {
+        root.keyActivity(key);
+
+        const ctrl = (modifiers & Qt.ControlModifier) !== 0;
+        const shift = (modifiers & Qt.ShiftModifier) !== 0;
+
+        if (key === Qt.Key_Escape) {
+            root.cancelled();
+            return true;
+        }
+
+        if (key === Qt.Key_Return || key === Qt.Key_Enter || (ctrl && key === Qt.Key_M)) {
+            root.accepted();
+            return true;
+        }
+
+        // Shift+Tab reaches an item as Backtab, and on some platforms as Tab
+        // with Shift still set, so both spellings move up. Plain Tab is the
+        // down key -- it used to accept the ghost completion, and nothing
+        // takes that job now.
+        if (key === Qt.Key_Up || (ctrl && key === Qt.Key_P)
+                || key === Qt.Key_Backtab || (key === Qt.Key_Tab && shift)) {
+            root.moveUp();
+            return true;
+        }
+
+        if (key === Qt.Key_Down || (ctrl && key === Qt.Key_N) || key === Qt.Key_Tab) {
+            root.moveDown();
+            return true;
+        }
+
+        return false;
+    }
 
     function acceptCompletion() {
         if (!root.ghostVisible) return;

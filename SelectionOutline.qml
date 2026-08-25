@@ -1,22 +1,25 @@
 import QtQuick
 
 // The selection outline: a 2px rounded rectangle that travels between rows on
-// a spring and stretches vertically in proportion to its own velocity.
+// the same animation the lane slides on, stretching vertically in proportion
+// to its own velocity.
 //
 // Nothing here drives layout. The rows read `centreY` to place themselves, but
 // this item is positioned absolutely and its height change is purely visual.
 Rectangle {
     id: root
 
-    // Where the selection wants to be, in lane slots. Set by ResultList; the
-    // spring below does the travelling. Slots rather than pixels so the
-    // outline stays glued to its row while the lane is sliding underneath it.
+    // Where the selection wants to be, as a slot in the visible window. Set by
+    // ResultList; the animation below does the travelling. A window slot, not a
+    // pixel and not a lane position: while the lane scrolls the selection is
+    // pinned to the edge, so this does not change and the outline holds still
+    // while the rows slide underneath it.
     property real targetPosition: 0
 
     property color strokeColour: Theme.activeAccent
     property bool collapsing: false
 
-    // Sampled velocity in pixels per second, zero whenever the spring is idle.
+    // Sampled velocity in pixels per second, zero whenever the outline is idle.
     property real velocity: 0
 
     // Number of frames sampled since startup. This is the shell's entire
@@ -31,7 +34,7 @@ Rectangle {
     readonly property real stretch: Math.min(root.maxStretch,
         Math.abs(root.velocity) * root.stretchPerVelocity)
 
-    // The spring drives this. ResultList projects it into `centreY` and
+    // The travel animation drives this. ResultList projects it into `centreY` and
     // `heightScale`, so the outline sits exactly where the row it is landing
     // on has been projected to.
     property real position: root.targetPosition
@@ -40,19 +43,36 @@ Rectangle {
     property real centreY: 0
     property real heightScale: 1
 
-    Behavior on position {
-        SpringAnimation {
-            id: spring
+    // How long the outline takes to cross one row. Set by ResultList to the
+    // same duration the lane slides on.
+    property int travelDuration: 150
 
-            // Tuned by measurement, not by eye: at damping 0.75 the
-            // overshoot is a fixed fraction of the distance travelled, and
-            // stiffness 38 puts a one-row step ~3.6px past its projected
-            // resting place, settling in ~250ms. tests/spring.qml asserts it.
-            spring: 38
-            damping: 0.75
-            mass: 1.0
-            // `position` is in row slots, not pixels: a fifth of a pixel.
-            epsilon: 0.004
+    // This used to be a spring, and the spring is what put the outline off its
+    // row. Two reasons, both structural rather than a matter of tuning:
+    //
+    //   1. It overshoots by design -- ~10% of the travel past the row before
+    //      it comes back -- so the outline is never on the row it marks until
+    //      it settles.
+    //   2. It was chasing a target measured against the animated `laneY`, so
+    //      it inherited the lane's easing error on top of its own lag. Under a
+    //      held key that compounded: measured at 1.9 rows down and 4.1 rows
+    //      up, with the selection pushed clean out of the window. The target
+    //      is a plain window slot now, which is the real fix; this animation
+    //      only ever has one row to cross.
+    //
+    // Stiffening it does not help -- Qt integrates a SpringAnimation per frame
+    // and it diverges above about 90, which sent the position to 1e11 px.
+    //
+    // So the outline now travels on exactly the animation the lane travels on:
+    // same duration, same curve, one clock. It cannot disagree with the rows
+    // about where a row is, because it is no longer computing that separately,
+    // and it always lands on the row rather than past it.
+    Behavior on position {
+        NumberAnimation {
+            id: travel
+
+            duration: root.travelDuration
+            easing.type: Easing.OutCubic
         }
     }
 
@@ -88,7 +108,7 @@ Rectangle {
 
     // Four soft bands laid along the outline's own edges, in the outline's own
     // colour. Children of the outline, so they are the same element as far as
-    // travel is concerned: same slot, same spring, no separate animation that
+    // travel is concerned: same slot, same animation, nothing separate that
     // could lag or trail. The colour is read off `border.color` rather than
     // `strokeColour` so the aura crossfades into the confirm red on exactly
     // the curve the stroke does.
@@ -134,15 +154,15 @@ Rectangle {
     // ------------------------------------------------------ velocity sampling
 
     // The only per-frame work in the shell, and it runs strictly while the
-    // spring is running. `spring.running` goes false the moment the animation
-    // settles within epsilon, which stops this and ends all repainting.
+    // outline is travelling. `travel.running` goes false the moment it arrives,
+    // which stops this and ends all repainting.
     // tests/spring.qml asserts that with a frame counter.
     FrameAnimation {
         id: velocitySampler
 
         property real lastCentre: 0
 
-        running: spring.running
+        running: travel.running
         onTriggered: {
             const dt = Math.max(velocitySampler.frameTime, 1 / 480);
             root.velocity = (root.centreY - velocitySampler.lastCentre) / dt;
@@ -157,5 +177,5 @@ Rectangle {
     }
 
     // Exposed so tests and the list can tell whether anything is still moving.
-    readonly property alias settling: spring.running
+    readonly property alias settling: travel.running
 }

@@ -20,16 +20,18 @@ Provider {
             const action = actions[i];
             if (!action || !action.name || !action.exec) continue;
 
-            out.push(root.candidate({
+            const record = root.candidate({
                 "name": action.name,
                 // Matched on like a desktop entry's Exec line, so "poweroff"
                 // finds an action named "Power off".
                 "exec": action.exec,
-                "icon": root.resolveIcon(action.icon),
                 "id": "action:" + action.name,
                 "confirm": action.confirm === true,
                 "payload": action
-            }));
+            });
+
+            root.defineIcon(record.entry, action.icon);
+            out.push(record);
         }
 
         return out;

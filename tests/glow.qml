@@ -156,6 +156,12 @@ ShellRoot {
 
         // ------------------------------------------------ the lane transform
 
+        // The lane is straight by default now, and a flat lane has no depth to
+        // flatten, so the assertions below turn the fan on: what they are about
+        // is the projection surviving the z-row trick, not what the launcher
+        // draws out of the box.
+        list.perspective = 1;
+
         // The rows recede on the z axis, and the renderer clips in a shallow
         // band around zero: left alone, everything below the top row is thrown
         // away before it is drawn. rowMatrix zeroes the output z row, which
@@ -197,6 +203,7 @@ ShellRoot {
 
         // The lane still has to draw, so the transform fix is not conditional
         // on the glow.
+        list.perspective = 1;
         const matrix = list.rowMatrix(3, 1, 260, 34);
         suite.check("the lane's transform still emits no depth",
             matrix.m31 === 0 && matrix.m32 === 0 && matrix.m33 === 0 && matrix.m34 === 0,

@@ -41,13 +41,16 @@ Provider {
         // launch history with rofi itself.
         record.entry = {
             "name": entry.name,
-            "icon": root.resolveIcon(entry.icon),
             "id": entry.id,
             "source": root,
             "payload": entry,
             "confirm": false,
             "value": entry.name
         };
+
+        // Resolved on first read, not here: this map runs over every installed
+        // application at startup.
+        root.defineIcon(record.entry, entry.icon);
 
         return record;
     })

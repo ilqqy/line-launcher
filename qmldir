@@ -1,0 +1,12 @@
+module lineLauncher
+
+singleton Config 1.0 Config.qml
+singleton Theme 1.0 Theme.qml
+
+Glow 1.0 Glow.qml
+EdgeGlow 1.0 EdgeGlow.qml
+
+SearchFrame 1.0 SearchFrame.qml
+ResultList 1.0 ResultList.qml
+ResultItem 1.0 ResultItem.qml
+SelectionOutline 1.0 SelectionOutline.qml

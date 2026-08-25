@@ -1,0 +1,7 @@
+module lineLauncher.providers
+
+Provider 1.0 Provider.qml
+DrunProvider 1.0 DrunProvider.qml
+ActionsProvider 1.0 ActionsProvider.qml
+CommandProvider 1.0 CommandProvider.qml
+DmenuProvider 1.0 DmenuProvider.qml

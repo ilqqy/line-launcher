@@ -216,15 +216,14 @@ for its confirming Enter. On the query it follows the accent in force,
 including a provider's own -- so the field recolours with the outline when a
 prefix like `>` is active.
 
-The two are drawn differently, and it shows. The outline is a rectangle, so
-its aura is computed analytically: the falloff is a distance from the edge,
-opaque at the stroke and gone by `auraRadius`, and `auraOpacity` is what it
-looks like. Glyphs have no such shortcut -- their aura is a blur, and blurring
-a 1px stem over 20px leaves very little behind. Measured against a pale
-wallpaper with a pale accent, the query's aura shifts the region by 0.005 in
-red-against-blue: present, provable, and near the threshold of being seen.
-Raise `auraOpacity` if you want the query to announce itself; the outline will
-get louder with it.
+Both are traced from their complete silhouette. In particular, the outline is
+blurred as one rounded ring rather than as four separate edge shadows: adjacent
+edges therefore cannot stack their opacity into bright spots at the corners.
+Blurring a 1px glyph stem over 20px leaves very little behind. Measured against
+a pale wallpaper with a pale accent, the query's aura shifts the region by
+0.005 in red-against-blue: present, provable, and near the threshold of being
+seen. Raise `auraOpacity` if you want the query to announce itself; the outline
+will get louder with it.
 
 Both radii are quoted at the default `fontSize` and scale with it: a halo is a
 proportion of the type it sits under, so a launcher configured larger gets a
@@ -237,9 +236,8 @@ through.
 Neither glow costs the launcher its rest. Measured on a real scene graph:
 identical frame counts with the glow on and off, zero frames swapped over two
 seconds of an idle launcher, and zero again in the two seconds after the
-selection lands. The aura is the one that travels, so it is drawn analytically
-rather than blurred from a texture -- there is nothing to re-render as the
-outline moves and stretches.
+selection lands. The aura travels as part of the outline, and the scene returns
+to rest once its geometry settles.
 
 ### The resting state
 

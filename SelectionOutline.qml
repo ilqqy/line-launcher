@@ -6,7 +6,7 @@ import QtQuick
 //
 // Nothing here drives layout. The rows read `centreY` to place themselves, but
 // this item is positioned absolutely and its height change is purely visual.
-Rectangle {
+Item {
     id: root
 
     // Where the selection wants to be, as a slot in the visible window. Set by
@@ -92,64 +92,44 @@ Rectangle {
 
     y: Config.snap(root.centreY - height / 2)
 
-    color: "transparent"
-    border.width: Config.strokeWidth
-    border.color: root.strokeColour
-    radius: Config.cornerRadius
-
-    Behavior on border.color {
-        ColorAnimation {
-            duration: 140
-            easing.type: Easing.OutCubic
-        }
-    }
-
     // ------------------------------------------------------------ accent aura
 
-    // Four soft bands laid along the outline's own edges, in the outline's own
-    // colour. Children of the outline, so they are the same element as far as
-    // travel is concerned: same slot, same animation, nothing separate that
-    // could lag or trail. The colour is read off `border.color` rather than
-    // `strokeColour` so the aura crossfades into the confirm red on exactly
-    // the curve the stroke does.
-    //
-    // The accent lives here and nowhere else in the shell.
-    component AuraEdge: EdgeGlow {
-        colour: root.border.color
+    // Trace the complete ring once. The former four-edge implementation put
+    // two independent shadows over every corner, so their alpha accumulated
+    // there and made four conspicuous bright spots. One silhouette gives the
+    // straight runs and rounded corners the same falloff.
+    Glow {
+        id: aura
+
+        anchors.fill: outline
+        target: outline
+        blurRadius: Config.auraRadius
+        strength: Config.auraOpacity
+        colour: outline.border.color
     }
 
-    AuraEdge {
-        x: 0
-        y: 0
-        width: root.width
-        height: Config.strokeWidth
-    }
+    Rectangle {
+        id: outline
 
-    AuraEdge {
-        x: 0
-        y: root.height - Config.strokeWidth
-        width: root.width
-        height: Config.strokeWidth
-    }
+        anchors.fill: parent
+        color: "transparent"
+        border.width: Config.strokeWidth
+        border.color: root.strokeColour
+        radius: Config.cornerRadius
 
-    AuraEdge {
-        x: 0
-        y: 0
-        width: Config.strokeWidth
-        height: root.height
-    }
-
-    AuraEdge {
-        x: root.width - Config.strokeWidth
-        y: 0
-        width: Config.strokeWidth
-        height: root.height
+        Behavior on border.color {
+            ColorAnimation {
+                duration: 140
+                easing.type: Easing.OutCubic
+            }
+        }
     }
 
     // Exposed for tests: whether the aura is actually in the scene.
     readonly property bool auraActive: Config.glowEnabled
         && Config.auraRadius >= 1
         && Config.auraOpacity > 0
+    readonly property alias auraEffect: aura
 
     // ------------------------------------------------------ velocity sampling
 

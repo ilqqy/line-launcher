@@ -79,6 +79,12 @@ ShellRoot {
             ]
             currentIndex: 0
         }
+
+        SelectionOutline {
+            id: selection
+            width: Config.frameWidth
+            centreY: Config.rowHeight / 2
+        }
     }
 
     function run() {
@@ -137,6 +143,11 @@ ShellRoot {
 
         suite.check("the aura follows glowEnabled", list.auraActive === Config.glowEnabled,
             "auraActive=" + list.auraActive + " glowEnabled=" + Config.glowEnabled);
+
+        suite.check("the outline aura is one traced silhouette",
+            selection.auraEffect.item !== null
+                && selection.auraEffect.target !== null,
+            "the complete outline was not given one effect");
 
         // The query wears the accent aura; the ghost and the prompt do not.
         // tests/preview.qml proves the accent actually reaches the glass --
@@ -200,6 +211,10 @@ ShellRoot {
 
         suite.check("and the aura is gone with it", !list.auraActive,
             "the aura was still active");
+
+        suite.check("and its outline effect is not constructed",
+            selection.auraEffect.item === null,
+            "an outline effect survived glowEnabled = false");
 
         // The lane still has to draw, so the transform fix is not conditional
         // on the glow.

@@ -48,10 +48,6 @@ Provider {
             "value": entry.name
         };
 
-        // Resolved on first read, not here: this map runs over every installed
-        // application at startup.
-        root.defineIcon(record.entry, entry.icon);
-
         return record;
     })
 

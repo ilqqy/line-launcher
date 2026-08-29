@@ -18,9 +18,8 @@ import QtQuick.Effects
 //
 // `brightness: 1.0` ahead of `colorization: 1.0` is what makes the halo a
 // single flat colour rather than a blurred smear of the content's own. That is
-// not cosmetic: without it a full-colour Papirus icon would glow in its own
-// colours, which is the blue-Steam-smear problem again, one layer down.
-// Measured: white, dark grey and red sources all produce an identical halo.
+// not cosmetic: it ensures differently coloured sources all produce the same
+// palette-background halo.
 //
 // With the glow switched off the Loader never constructs the MultiEffect, so
 // there is no layer, no texture and no shader anywhere in the scene.

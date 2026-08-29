@@ -1,7 +1,8 @@
 import QtQuick
 
-// The input frame: two whiskers, the field between them, and the ghost
-// completion.
+// The input frame: one translucent box with a line extending from each side.
+// Hyprland's layer blur sees the box's alpha and blurs only that region; the
+// rest of the full-screen layer remains transparent.
 //
 // Everything here is positioned absolutely off `centreX`. Nothing lives in a
 // Layout, so the close animation can move strokes around without ever
@@ -125,16 +126,13 @@ Item {
     readonly property real centreX: root.width / 2
     readonly property real centreY: root.height / 2
 
-    readonly property real leftHookX: Config.snap(root.centreX - root.gap / 2 - root.stroke)
-    readonly property real rightHookX: Config.snap(root.centreX + root.gap / 2)
     readonly property real strokeY: Config.snap(root.centreY - root.stroke / 2)
-    readonly property real hookY: Config.snap(root.centreY - Config.hookLength / 2)
 
-    implicitHeight: Math.max(Config.hookLength, input.implicitHeight)
+    implicitHeight: Config.frameHeight
 
     // The legibility halo under the strokes.
     //
-    // One per stroke rather than one over the frame: each is a 50x2 or 2x16
+    // One per whisker rather than one over the frame: each is a narrow
     // rectangle whose colour changes only when the palette reloads, so each
     // traced texture is rendered once and then only moved. Tracing the frame
     // as a whole would mean a texture as wide as the screen -- the frame is a
@@ -146,48 +144,19 @@ Item {
     }
 
     Glow {
-        anchors.fill: leftHook
-        target: leftHook
-    }
-
-    Glow {
-        anchors.fill: rightHook
-        target: rightHook
-    }
-
-    Glow {
         anchors.fill: rightWhisker
         target: rightWhisker
     }
 
-    // The strokes themselves only ever move on open and on close: each side --
-    // whisker and hook together -- gathers inwards on entry and leaves the
-    // same way.
+    // The whiskers meet the box at its vertical centre.
     Rectangle {
         id: leftWhisker
         width: Config.whiskerLength
         height: root.stroke
         color: Theme.foreground
-        x: root.leftHookX - width - root.slide - root.entryOffset
+        x: Config.snap(root.centreX - root.gap / 2 - width
+            - root.slide - root.entryOffset)
         y: root.strokeY
-    }
-
-    Rectangle {
-        id: leftHook
-        width: root.stroke
-        height: Config.hookLength
-        color: Theme.foreground
-        x: root.leftHookX - root.entryOffset
-        y: root.hookY
-    }
-
-    Rectangle {
-        id: rightHook
-        width: root.stroke
-        height: Config.hookLength
-        color: Theme.foreground
-        x: root.rightHookX + root.entryOffset
-        y: root.hookY
     }
 
     Rectangle {
@@ -195,13 +164,34 @@ Item {
         width: Config.whiskerLength
         height: root.stroke
         color: Theme.foreground
-        x: root.rightHookX + root.stroke + root.slide + root.entryOffset
+        x: Config.snap(root.centreX + root.gap / 2
+            + root.slide + root.entryOffset)
         y: root.strokeY
     }
 
     // --------------------------------------------------------- input field
 
     readonly property real fieldPadding: 12
+
+    // The solid outline and translucent interior form the exact silhouette in
+    // the sketch. The alpha is intentionally above Hyprland's ignore_alpha
+    // threshold: it asks the compositor for blur without hiding it behind an
+    // opaque panel.
+    Rectangle {
+        id: frameBox
+
+        x: Config.snap(root.centreX - root.gap / 2)
+        y: Config.snap(root.centreY - height / 2)
+        width: Math.max(0, root.gap)
+        height: Config.frameHeight
+        radius: Config.cornerRadius
+
+        color: Qt.alpha(Theme.background, Config.frameFillOpacity)
+        border.width: root.stroke
+        border.color: Theme.foreground
+        visible: width > root.stroke
+        z: -3
+    }
 
     // The field's halo. Traced from the whole field -- typed text, prompt and
     // ghost -- so all three get the same treatment, and following the field's
@@ -243,7 +233,10 @@ Item {
         target: input
         colour: Theme.activeAccent
         blurRadius: Config.auraRadius
-        strength: Config.auraOpacity
+        // Typed text is the active input, so give its accent a brighter halo
+        // than the selection outline while leaving the prompt and completion
+        // at their quieter, muted treatment.
+        strength: Math.min(1, Config.auraOpacity * 2.5)
         opacity: field.opacity
         z: -2
     }
@@ -253,10 +246,10 @@ Item {
     Item {
         id: field
 
-        x: Config.snap(root.centreX - Config.frameWidth / 2) + root.fieldPadding
-        width: Config.frameWidth - root.fieldPadding * 2
-        height: input.implicitHeight
-        y: Config.snap(root.centreY - height / 2)
+        x: frameBox.x + root.fieldPadding
+        y: frameBox.y + root.stroke
+        width: Math.max(0, frameBox.width - root.fieldPadding * 2)
+        height: Math.max(0, frameBox.height - root.stroke * 2)
 
         opacity: root.collapsing ? 0 : 1
         Behavior on opacity {
@@ -270,11 +263,12 @@ Item {
             verticalAlignment: TextInput.AlignVCenter
             horizontalAlignment: TextInput.AlignLeft
 
-            color: Theme.foreground
+            color: Theme.queryForeground
             selectionColor: Theme.activeAccent
-            selectedTextColor: Theme.foreground
+            selectedTextColor: Theme.queryForeground
             font.pixelSize: Theme.fontSize
             font.family: Theme.fontFamily !== "" ? Theme.fontFamily : font.family
+            font.weight: Font.DemiBold
 
             focus: true
             activeFocusOnPress: true
@@ -299,14 +293,16 @@ Item {
             visible: input.text.length === 0 && Config.prompt !== ""
             text: Config.prompt
             color: Theme.muted
-            font: input.font
+            font.pixelSize: input.font.pixelSize
+            font.family: input.font.family
         }
 
         // Ghost completion. A separate Text, positioned from the metrics of
         // the real field rather than living inside it.
         TextMetrics {
             id: typedMetrics
-            font: input.font
+            font.pixelSize: input.font.pixelSize
+            font.family: input.font.family
             text: input.text
         }
 

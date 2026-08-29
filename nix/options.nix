@@ -21,7 +21,7 @@ in rec {
       icon = mkOption {
         type = types.nullOr types.str;
         default = null;
-        description = "Freedesktop icon name. Falls back to a generic icon when null.";
+        description = "Deprecated compatibility option; result icons are no longer rendered.";
         example = "system-shutdown";
       };
 
@@ -30,8 +30,8 @@ in rec {
         default = false;
         description = ''
           Require a second Enter before running. The first Enter recolours the
-          selection outline to {option}`colors.danger` and replaces the result
-          counter with the word "confirm"; any other key cancels.
+          selection outline to {option}`colors.danger` and shows the word
+          "confirm" beside it; any other key cancels.
         '';
       };
 
@@ -122,7 +122,7 @@ in rec {
       foreground = mkOption {
         type = types.nullOr types.str;
         default = null;
-        description = "Static fallback for text, whiskers and hooks.";
+        description = "Static fallback for text and frame strokes.";
         example = "#c5c8c6";
       };
 
@@ -182,8 +182,8 @@ in rec {
       type = types.ints.positive;
       default = 8;
       description = ''
-        Reach in pixels of the legibility halo under the text, the strokes and
-        the icons, in {option}`colors.background`.
+        Reach in pixels of the legibility halo under the text and strokes, in
+        {option}`colors.background`.
 
         Quoted at the default {option}`fontSize` and scaled with it: a halo is
         a proportion of the type it sits under, so a launcher configured larger
@@ -202,9 +202,8 @@ in rec {
         what lands beside the stroke is nearer a tenth. It behaves like CSS
         `text-shadow: 0 0 8px`, which is the same construction. Measured
         against a pale wallpaper, the default lifts a result label from 1.41:1
-        to 1.61:1 and the result counter from 1.05:1 to 1.21:1; the strongest
-        setting that stays subtle, {option}`glowRadius` 4 with this at 1.0,
-        reaches 2.01:1 and 1.50:1.
+        to 1.61:1; the strongest setting that stays subtle,
+        {option}`glowRadius` 4 with this at 1.0, reaches 2.01:1.
       '';
     };
 
@@ -233,11 +232,9 @@ in rec {
         follows the accent and crossfades into {option}`colors.danger` with the
         stroke when an action asks for its confirming Enter.
 
-        The typed query wears the same aura, in the accent in force. That one
-        is a blur rather than a distance falloff, because glyphs are not
-        rectangles, so it lands far dimmer at the same number -- measured, it
-        shifts its region by 0.005 in red-against-blue on a pale wallpaper.
-        Raise this if you want the query to announce itself. The ghost
+        The typed query wears a brighter version of the same aura, in the
+        accent in force. Its opacity is 2.5 times this value, capped at 1.0,
+        and its glyphs use a maximum-contrast semibold colour. The ghost
         completion and the prompt are left plain: neither was typed.
       '';
     };
@@ -245,19 +242,34 @@ in rec {
     frameWidth = mkOption {
       type = types.ints.positive;
       default = 260;
-      description = "Distance in pixels between the inner ends of the two whiskers.";
+      description = "Width in pixels of the central blurred search frame.";
+    };
+
+    frameHeight = mkOption {
+      type = types.ints.positive;
+      default = 44;
+      description = "Height in pixels of the central blurred search frame.";
+    };
+
+    frameFillOpacity = mkOption {
+      type = types.numbers.between 0 1;
+      default = 0.42;
+      description = ''
+        Opacity of the palette-background fill inside the search frame. This
+        translucent area is what a Hyprland blur layer rule acts on.
+      '';
     };
 
     whiskerLength = mkOption {
       type = types.ints.positive;
-      default = 50;
+      default = 120;
       description = "Length in pixels of each horizontal whisker stroke.";
     };
 
     hookLength = mkOption {
       type = types.ints.positive;
       default = 16;
-      description = "Height in pixels of the vertical hook at each whisker's inner end.";
+      description = "Deprecated compatibility option; the boxed frame has no separate hooks.";
     };
 
     visibleItems = mkOption {
@@ -362,6 +374,8 @@ in rec {
           auraRadius
           auraOpacity
           frameWidth
+          frameHeight
+          frameFillOpacity
           whiskerLength
           hookLength
           visibleItems

@@ -195,6 +195,12 @@ Singleton {
     readonly property color accent: root.parsedAccent || Config.fallbackColors.accent
     readonly property color danger: root.parsedDanger || Config.fallbackColors.danger
 
+    // Maximum-contrast query colour. The field is the one place where muted
+    // wallpaper-derived foregrounds must not make user input look like ghost
+    // text: use white on dark palettes and black on light ones.
+    readonly property color queryForeground:
+        root.background.hslLightness < 0.5 ? "#ffffff" : "#000000"
+
     readonly property real mutedAlpha: 0.45
     readonly property color muted: Qt.alpha(root.foreground, root.mutedAlpha)
 

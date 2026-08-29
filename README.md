@@ -1,7 +1,8 @@
 # line-launcher
 
 A Wayland application launcher for Hyprland, written in [Quickshell](https://quickshell.org).
-Lines and text on a transparent surface -- no panel, no blur, no backdrop.
+A translucent, Hyprland-blurred search frame with a line extending from both
+sides, plus a transparent result lane.
 
 ![demo](docs/demo.gif)
 
@@ -88,9 +89,10 @@ shorter.
     auraRadius = 20;                    # selection aura, resolved accent
     auraOpacity = 0.35;
 
-    frameWidth = 260;                   # gap between the whiskers
-    whiskerLength = 50;
-    hookLength = 16;
+    frameWidth = 260;                   # central search box
+    frameHeight = 44;
+    frameFillOpacity = 0.42;            # lets compositor blur show through
+    whiskerLength = 120;
     visibleItems = 5;
     listPerspective = 0;                # 1 fans the rows away from you
     maxCharacters = 60;                 # dmenu column truncation
@@ -129,8 +131,9 @@ The modules only write a JSON file. Put the same thing at
   "auraRadius": 20,
   "auraOpacity": 0.35,
   "frameWidth": 260,
-  "whiskerLength": 50,
-  "hookLength": 16,
+  "frameHeight": 44,
+  "frameFillOpacity": 0.42,
+  "whiskerLength": 120,
   "visibleItems": 5,
   "listPerspective": 0,
   "maxCharacters": 60,
@@ -172,7 +175,7 @@ accent=color1 #DEB2A6 (auto, deltaE2000 16.6 from foreground #c4c5c6)
 ```
 
 The accent is used for the selection outline and the typed query, and nothing
-else -- see Glow below. Icons always render in their own colours.
+else -- see Glow below.
 
 ### Glow
 
@@ -181,8 +184,8 @@ the strokes and the text with nothing to sit against. Rather than put a panel
 or a scrim behind them, the content is given its own contrast: two halos, with
 different colours and different jobs.
 
-**The legibility glow** sits under the text, the frame strokes and the icons,
-in `colors.background` -- the palette's own background, not black, so a light
+**The legibility glow** sits under the text and frame strokes, in
+`colors.background` -- the palette's own background, not black, so a light
 scheme gets a light halo instead of outlining its pale text in soot. It is
 traced from the shape of the content, so a glyph sits in its own small pool of
 colour and the space between glyphs stays transparent. Tight and dim on
@@ -194,21 +197,23 @@ same way `text-shadow: 0 0 8px` does in CSS. Measured against a pale
 wallpaper, in contrast ratio of the darkest pixel against the local
 background:
 
-| glowRadius | glowOpacity | result label | result counter |
-| --- | --- | --- | --- |
-| — | off | 1.41:1 | 1.05:1 |
-| 8 | 0.55 (default) | 1.61:1 | 1.21:1 |
-| 4 | 0.55 | 1.68:1 | 1.28:1 |
-| 8 | 1.0 | 1.83:1 | 1.37:1 |
-| 4 | 1.0 | 2.01:1 | 1.50:1 |
+| glowRadius | glowOpacity | result label |
+| --- | --- | --- |
+| — | off | 1.41:1 |
+| 8 | 0.55 (default) | 1.61:1 |
+| 4 | 0.55 | 1.68:1 |
+| 8 | 1.0 | 1.83:1 |
+| 4 | 1.0 | 2.01:1 |
 
 Turn it up if your wallpapers are brighter than mine.
 
 **The accent aura** is worn by two things: the selection outline, and the
 typed query. Nothing else. Wider and softer than the legibility glow --
 `auraRadius` 20, `auraOpacity` 0.35 -- so what you are steering and what it
-has landed on light up together. The ghost completion does not get it: it is a
-suggestion, not something you typed. Neither does the prompt.
+has landed on light up together. The typed query uses a much stronger version
+of that aura plus a maximum-contrast, semibold glyph colour. The ghost
+completion does not get either treatment: it is a suggestion, not something
+you typed. Neither does the prompt.
 
 Around the outline it is drawn in whatever colour the outline currently is, so
 it crossfades into `colors.danger` along with the stroke when an action asks
@@ -219,11 +224,9 @@ prefix like `>` is active.
 Both are traced from their complete silhouette. In particular, the outline is
 blurred as one rounded ring rather than as four separate edge shadows: adjacent
 edges therefore cannot stack their opacity into bright spots at the corners.
-Blurring a 1px glyph stem over 20px leaves very little behind. Measured against
-a pale wallpaper with a pale accent, the query's aura shifts the region by
-0.005 in red-against-blue: present, provable, and near the threshold of being
-seen. Raise `auraOpacity` if you want the query to announce itself; the outline
-will get louder with it.
+The query uses 2.5 times `auraOpacity`, capped at 1.0, so the typed text reads
+brighter than the outline without changing the quieter ghost completion or
+prompt.
 
 Both radii are quoted at the default `fontSize` and scale with it: a halo is a
 proportion of the type it sits under, so a launcher configured larger gets a
@@ -279,37 +282,32 @@ programs.line-launcher.actions = [
   {
     name = "Lock";
     exec = "hyprlock";
-    icon = "system-lock-screen";
   }
   {
     name = "Suspend";
     exec = "systemctl suspend";
-    icon = "system-suspend";
   }
   {
     name = "Reboot";
     exec = "systemctl reboot";
-    icon = "system-reboot";
     confirm = true;
   }
   {
     name = "Power off";
     exec = "systemctl poweroff";
-    icon = "system-shutdown";
     confirm = true;
   }
   {
     name = "Log out";
     exec = "hyprctl dispatch exit";
-    icon = "system-log-out";
     confirm = true;
   }
 ];
 ```
 
 With `confirm = true`, the first Enter does not launch. The selection outline
-turns to `colors.danger` and the counter on the right is replaced by the word
-`confirm`; a second Enter runs it, and any other key cancels.
+turns to `colors.danger` and the word `confirm` appears on the right; a second
+Enter runs it, and any other key cancels.
 
 Actions match on their `exec` line as well as their name, so typing
 `poweroff` finds `Power off`.
@@ -349,13 +347,12 @@ Tab and Shift+Tab used to accept the ghost completion. Nothing is bound to
 that now -- the ghost is still drawn as a hint, but it is not something you
 can take.
 
-It opens by fading up while each side of the frame -- whisker and hook
-together -- drifts in from a tenth of the way out towards the screen edge, over
-320ms.
+It opens by fading up while the two whiskers drift in from a tenth of the way
+out towards the screen edge, over 320ms.
 
 Enter and Escape close differently on purpose: Enter collapses the frame -- the
-hooks meet, the whiskers slide off screen, the outline flattens to a line --
-while Escape just fades in place.
+box closes to a line, the whiskers slide off screen, and the outline flattens
+to a line -- while Escape just fades in place.
 
 The selection outline travels on the same 150ms curve the lane slides on, and
 lands on its row rather than past it. While a key is held the lane shortens
@@ -366,9 +363,19 @@ the same wherever the selection is.
 
 Hyprland:
 
-```
+```lua
 bind = SUPER, R, exec, line-launcher
+
+hl.layer_rule({
+  match = { namespace = "line-launcher" },
+  blur = true,
+  ignore_alpha = 0.15,
+})
 ```
+
+`ignore_alpha` is important because the launcher owns a transparent
+full-screen layer surface. It confines compositor blur to the translucent
+center frame instead of blurring the entire monitor.
 
 ## Command-line flags
 
@@ -387,27 +394,12 @@ used exactly as given -- `line-launcher -n wave-launcher` produces a surface
 named `wave-launcher` and nothing else:
 
 ```
-layerrule = animation slide, wave-launcher
+hl.layer_rule({
+  match = { namespace = "wave-launcher" },
+  blur = true,
+  ignore_alpha = 0.15,
+})
 ```
-
-## Icons
-
-Icons come from the Qt icon theme. If result rows show drawn placeholder rings
-instead of real icons, Qt has no icon theme configured -- it falls back to
-`hicolor`, which carries application icons but none of the generic ones.
-
-Under `qt6ct` / `qt5ct`, set it in `~/.config/qt6ct/qt6ct.conf`:
-
-```ini
-[Appearance]
-icon_theme=Papirus-Dark
-```
-
-The theme has to be installed somewhere on `XDG_DATA_DIRS`, e.g.
-`pkgs.papirus-icon-theme`, `pkgs.adwaita-icon-theme` or
-`pkgs.kdePackages.breeze-icons`. A launcher entry whose icon name is missing
-from whichever theme is active always gets a drawn placeholder, never blank
-space.
 
 ## Credits
 

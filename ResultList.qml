@@ -15,8 +15,7 @@ import QtQuick
 // it to the active row would drag every distant row around as the selection
 // moved, which is not what "the lane stays put" means.
 //
-// This file is provider-agnostic: it reads `name` and `icon` off result
-// objects and nothing else.
+// This file is provider-agnostic: it reads only `name` off result objects.
 Item {
     id: root
 
@@ -311,7 +310,6 @@ Item {
             opacity: root.collapsing ? 0 : root.opacityFor(row.slot)
 
             name: row.entry ? row.entry.name : ""
-            iconSource: row.entry ? row.entry.icon : ""
             active: row.absoluteIndex === root.currentIndex
 
             transform: Matrix4x4 {
@@ -390,40 +388,27 @@ Item {
     readonly property alias outlineSamples: outline.sampleCount
     readonly property alias auraActive: outline.auraActive
 
-    // ------------------------------------------------------------- counter
+    // ------------------------------------------------ confirmation warning
 
-    // The counter's halo. It sits outside the frame, over bare wallpaper, with
-    // nothing else near it -- so it is the first thing to disappear on a pale
-    // background and the clearest case for the glow.
+    // Keep the destructive-action warning beside the selection, but do not
+    // show a persistent current/total result counter.
     Glow {
-        anchors.fill: counter
-        target: counter
-        visible: counter.visible
+        anchors.fill: confirmationLabel
+        target: confirmationLabel
+        visible: confirmationLabel.visible
     }
 
     Text {
-        id: counter
+        id: confirmationLabel
 
         x: Config.snap(outline.x + outline.width + 12)
         y: Config.snap(outline.centreY - height / 2)
 
-        visible: root.count > 0 && !root.collapsing
+        visible: root.confirming && root.count > 0 && !root.collapsing
+        text: qsTr("confirm")
 
-        // The counter is where the confirm state announces itself, in place of
-        // the position readout.
-        text: root.confirming
-            ? qsTr("confirm")
-            : (root.currentIndex + 1) + "/" + root.count
-
-        color: root.confirming ? Theme.danger : Theme.muted
+        color: Theme.danger
         font.pixelSize: Math.max(9, Theme.fontSize - 1)
         font.family: Theme.fontFamily !== "" ? Theme.fontFamily : font.family
-
-        Behavior on color {
-            ColorAnimation {
-                duration: 140
-                easing.type: Easing.OutCubic
-            }
-        }
     }
 }

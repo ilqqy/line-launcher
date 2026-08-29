@@ -57,7 +57,9 @@ ShellRoot {
         onTriggered: {
             // --- config layering ------------------------------------------
             suite.check("frameWidth from config.json", Config.frameWidth, 300);
-            suite.check("whiskerLength default", Config.whiskerLength, 50);
+            suite.check("frameHeight default", Config.frameHeight, 44);
+            suite.check("frameFillOpacity default", Config.frameFillOpacity, 0.42);
+            suite.check("whiskerLength default", Config.whiskerLength, 120);
             suite.check("hookLength default", Config.hookLength, 16);
             suite.check("visibleItems from --items", Config.visibleItems, 9);
             suite.check("prompt from --prompt", Config.prompt, "run:");

@@ -156,7 +156,8 @@ ShellRoot {
         suite.check("the typed query wears the aura, not the glow",
             String(frame.queryAura.colour) === String(Theme.activeAccent)
                 && suite.near(frame.queryAura.blurRadius, Config.auraRadius)
-                && suite.near(frame.queryAura.strength, Config.auraOpacity),
+                && suite.near(frame.queryAura.strength,
+                    Math.min(1, Config.auraOpacity * 2.5)),
             "colour=" + frame.queryAura.colour
                 + " radius=" + frame.queryAura.blurRadius
                 + " strength=" + frame.queryAura.strength);

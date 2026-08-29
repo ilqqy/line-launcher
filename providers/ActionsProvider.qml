@@ -30,7 +30,6 @@ Provider {
                 "payload": action
             });
 
-            root.defineIcon(record.entry, action.icon);
             out.push(record);
         }
 

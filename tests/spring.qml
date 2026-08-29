@@ -43,7 +43,7 @@ ShellRoot {
     readonly property var sampleResults: {
         const out = [];
         for (let i = 0; i < 12; i++) {
-            // ResultList reads nothing but `name` and `icon` off a result,
+            // ResultList reads nothing but `name` off a result,
             // which is the whole point of the provider interface.
             out.push({
                 "name": "Entry " + i,

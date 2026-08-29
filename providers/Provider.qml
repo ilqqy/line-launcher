@@ -16,7 +16,6 @@ import "root:/" as Root
 //         -- the fields rofi matches against
 //     entry: {
 //       name:    string   displayed, and what the ghost completion reads
-//       icon:    string   Image source, or "" for none
 //       id:      string   stable identity; also the rofi history key
 //       source:  Provider the provider that produced it
 //       payload: var      opaque, handed straight back to source.activate()
@@ -104,82 +103,6 @@ QtObject {
         root.run(["sh", "-c", command], inTerminal);
     }
 
-    // ---------------------------------------------------------------- icons
-
-    // Generic stand-ins, in preference order. Not every theme ships all of
-    // these -- application-x-executable is absent from plenty of them -- so
-    // each is probed rather than assumed.
-    readonly property var iconFallbacks: [
-        "application-x-executable",
-        "application-default-icon",
-        "applications-other",
-        "system-run",
-        "exec"
-    ]
-
-    // Quickshell's icon provider never fails: an unknown name yields a blank
-    // 100x100 image with status Ready, so Image.status cannot be used to
-    // detect a miss. hasThemeIcon is the only reliable gate, and it has to run
-    // before the source is built.
-    //
-    // Returns "" when nothing resolves, which is ResultItem's cue to draw a
-    // placeholder. A missing icon never renders as blank space.
-    function resolveIcon(name: string): string {
-        if (!name) return root.genericIcon();
-
-        // Some desktop entries name an absolute path rather than a theme icon.
-        if (name.startsWith("/")) return "file://" + name;
-
-        if (Quickshell.hasThemeIcon(name)) return Quickshell.iconPath(name);
-        return root.genericIcon();
-    }
-
-    // hasThemeIcon is the most expensive call in the codebase: it walks the
-    // icon theme on disk, and a cold lookup costs several milliseconds.
-    // Measured on a 104-application machine, resolving every entry up front
-    // cost 704ms -- all of it on the main thread, all of it before the window
-    // could paint, and all but a handful of it for rows nobody would see.
-    //
-    // So `entry.icon` is installed as a getter instead of a value. The lookup
-    // happens the first time something reads it -- which is ResultList binding
-    // a visible row's iconSource -- and the answer is kept. Startup pays for
-    // the rows on screen and nothing else.
-    //
-    // The result is cached rather than recomputed per read because the getter
-    // sits under a binding: `iconSource: row.entry.icon` re-reads on every
-    // scroll step, and an uncached getter would put the disk walk back.
-    function defineIcon(entry: var, name: string) {
-        let resolved = null;
-
-        Object.defineProperty(entry, "icon", {
-            enumerable: true,
-            configurable: true,
-            get: function() {
-                if (resolved === null) resolved = root.resolveIcon(name);
-                return resolved;
-            }
-        });
-    }
-
-    // "" is a legitimate answer -- no theme, no fallback, draw the
-    // placeholder -- so the miss is tracked with its own flag rather than by
-    // testing the cache for emptiness and re-probing every time.
-    property string genericIconCache: ""
-    property bool genericIconResolved: false
-
-    function genericIcon(): string {
-        if (root.genericIconResolved) return root.genericIconCache;
-
-        root.genericIconResolved = true;
-        for (let i = 0; i < root.iconFallbacks.length; i++) {
-            if (Quickshell.hasThemeIcon(root.iconFallbacks[i])) {
-                root.genericIconCache = Quickshell.iconPath(root.iconFallbacks[i]);
-                break;
-            }
-        }
-        return root.genericIconCache;
-    }
-
     // ------------------------------------------------------------- helpers
 
     // Builds a candidate record for sources that have nothing but a name --
@@ -196,9 +119,6 @@ QtObject {
             "comment": fields.comment || "",
             "entry": {
                 "name": fields.name,
-                // Callers that want theme resolution hand the raw name to
-                // defineIcon; anything set here is already a source.
-                "icon": fields.icon || "",
                 "id": fields.id,
                 "source": root,
                 "payload": fields.payload,

@@ -34,7 +34,9 @@ Singleton {
         "auraRadius": 20,
         "auraOpacity": 0.35,
         "frameWidth": 260,
-        "whiskerLength": 50,
+        "frameHeight": 44,
+        "frameFillOpacity": 0.42,
+        "whiskerLength": 120,
         "hookLength": 16,
         "visibleItems": 5,
         "listPerspective": 0,
@@ -147,7 +149,12 @@ Singleton {
     // ----------------------------------------------------------- geometry
 
     readonly property int frameWidth: root.data.frameWidth
+    readonly property int frameHeight: root.data.frameHeight
+    readonly property real frameFillOpacity:
+        Math.max(0, Math.min(1, root.data.frameFillOpacity))
     readonly property int whiskerLength: root.data.whiskerLength
+    // Kept in the JSON schema for compatibility with older configurations.
+    // The boxed frame no longer has separate vertical hooks.
     readonly property int hookLength: root.data.hookLength
     readonly property real strokeWidth: 2
 
@@ -164,36 +171,6 @@ Singleton {
 
     // Result-row metrics. Derived from the font size rather than exposed as
     // options: they are proportions of the type, not independent knobs.
-    readonly property int iconSize: Math.round(root.fontSize * 1.5)
-
-    // Quickshell's icon provider hands back the largest theme size that is
-    // <= the requested sourceSize. Asking for the exact rendered size gets a
-    // smaller pixmap scaled up, which is what made icons blurry: a 21px
-    // request returns a 16px pixmap.
-    //
-    // 22 is deliberately absent. Most themes are scalable and honour any
-    // request, but fixed-size entries are common at 16 and 24 and a 22px
-    // request rounds down to 16 for them -- Firefox on this machine does
-    // exactly that.
-    readonly property var themeIconSizes: [16, 24, 32, 48, 64, 96, 128, 256]
-
-    // Over-request by a quarter so the result is never smaller than the slot
-    // even when a theme's sizes are sparse. Downscaling with smooth and mipmap
-    // stays sharp; upscaling does not.
-    readonly property real iconSizeMargin: 1.25
-
-    function themeIconSize(pixels: real): int {
-        for (let i = 0; i < root.themeIconSizes.length; i++) {
-            if (root.themeIconSizes[i] >= pixels) return root.themeIconSizes[i];
-        }
-        return root.themeIconSizes[root.themeIconSizes.length - 1];
-    }
-
-    // What to ask the icon loader for: the rendered size in device pixels,
-    // with margin, rounded up to a standard theme size.
-    readonly property int iconPixelSize: root.themeIconSize(
-        Math.ceil(root.iconSize * root.iconSizeMargin
-            * (root.devicePixelRatio > 0 ? root.devicePixelRatio : 1)))
     readonly property int rowHeight: Math.round(root.fontSize * 2.4)
     readonly property int rowStep: Math.round(root.fontSize * 3.0)
     readonly property real cornerRadius: 4
@@ -203,7 +180,7 @@ Singleton {
 
     // Two halos, and they are not the same effect.
     //
-    //   glow*  the legibility halo under the text, the strokes and the icons.
+    //   glow*  the legibility halo under the text and the strokes.
     //          Palette background, tight and dim: it exists so a 2px stroke
     //          survives a pale wallpaper, not so it can be seen.
     //   aura*  the accent halo around the selection outline, and nowhere

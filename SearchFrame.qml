@@ -15,46 +15,17 @@ Item {
     readonly property alias text: input.text
     readonly property alias inputItem: input
 
-    // Exposed so tests can point at the three pieces of text the field draws
-    // and check each one separately.
+    // Exposed so tests can point at the field's text and prompt separately.
     readonly property alias promptItem: prompt
-    readonly property alias ghostItem: ghost
     readonly property alias queryAura: queryAura
     readonly property real typedTextX:
         Math.max(0, (field.width - typedMetrics.advanceWidth) / 2)
     readonly property real typedTextWidth: typedMetrics.advanceWidth
 
-    // Full name of the current top result. When the typed text is a prefix of
-    // it, the remainder is drawn as ghost text. Set by the shell; when the
-    // match is fuzzy but not a prefix this will not start with `text` and no
-    // ghost is drawn.
-    property string completion: ""
-
-    // Provider prefix currently in force, e.g. ">". Result names never include
-    // it, so the ghost compares against the query rather than the raw field.
-    property string prefix: ""
-
-    readonly property string query: root.text.startsWith(root.prefix)
-        ? root.text.substring(root.prefix.length)
-        : root.text
-
-    readonly property bool ghostVisible: Config.ghostEnabled
-        && root.query.length > 0
-        && root.completion.length > root.query.length
-        && root.completion.toLowerCase().startsWith(root.query.toLowerCase())
-
-    readonly property string ghostText: root.ghostVisible
-        ? root.completion.substring(root.query.length)
-        : ""
-
     signal accepted()
     signal cancelled()
     signal moveUp()
     signal moveDown()
-    // Nothing emits this since Tab became a move key. The ghost is still drawn
-    // and acceptCompletion() still works; it just has no key on it, so this is
-    // kept as the hook for whichever key takes the job next.
-    signal completionRequested()
     // Emitted for every key press, so the shell can drop out of the confirm
     // state on "any other key".
     signal keyActivity(int key)
@@ -196,9 +167,8 @@ Item {
         z: -3
     }
 
-    // The field's halo. Traced from the whole field -- typed text, prompt and
-    // ghost -- so all three get the same treatment, and following the field's
-    // own fade on close.
+    // The field's halo. Traced from the typed text and prompt, following the
+    // field's own fade on close.
     //
     // A sibling of the field rather than a child of it: an effect that traced
     // its own parent would be tracing itself.
@@ -220,8 +190,8 @@ Item {
     // same radius, so the two things the user is steering -- what they typed
     // and what it has landed on -- light up together.
     //
-    // It traces `input` alone, not the whole field: the ghost is a suggestion
-    // and the prompt is furniture, and neither is something the user typed.
+    // It traces `input` alone, not the whole field: the prompt is furniture,
+    // not something the user typed.
     // Drawing it from out here rather than inside the field also keeps it out
     // of the legibility halo's source, which would otherwise trace this and
     // wrap the aura in a second, background-coloured one. `input` fills the
@@ -237,8 +207,7 @@ Item {
         colour: Theme.activeAccent
         blurRadius: Config.auraRadius
         // Typed text is the active input, so give its accent a brighter halo
-        // than the selection outline while leaving the prompt and completion
-        // at their quieter, muted treatment.
+        // than the selection outline while leaving the prompt muted.
         strength: Math.min(1, Config.auraOpacity * 2.5)
         opacity: field.opacity
         z: -2
@@ -278,10 +247,6 @@ Item {
             selectByMouse: true
             clip: true
 
-            // Ghost text must never enter this property. Writing the
-            // completion into `text` would move the caret to the end of the
-            // suggestion and make Backspace delete characters the user never
-            // typed.
             Keys.onPressed: event => {
                 event.accepted = root.handleKey(event.key, event.modifiers);
             }
@@ -300,8 +265,7 @@ Item {
             font.family: input.font.family
         }
 
-        // Ghost completion. A separate Text, positioned from the metrics of
-        // the real field rather than living inside it.
+        // Metrics for locating the centred typed run in rendering tests.
         TextMetrics {
             id: typedMetrics
             font.pixelSize: input.font.pixelSize
@@ -310,22 +274,6 @@ Item {
             text: input.text
         }
 
-        Text {
-            id: ghost
-            // The real TextInput centres the typed run. Start the completion
-            // exactly at that run's right edge.
-            x: root.typedTextX + root.typedTextWidth
-            anchors.verticalCenter: parent.verticalCenter
-            visible: root.ghostVisible
-            text: root.ghostText
-            color: Theme.muted
-            font.pixelSize: input.font.pixelSize
-            font.family: input.font.family
-            // The ghost is decoration: it must never intercept clicks or
-            // widen the field.
-            width: Math.max(0, parent.width - x)
-            elide: Text.ElideRight
-        }
     }
 
     // ---------------------------------------------------------------- API
@@ -351,9 +299,8 @@ Item {
         }
 
         // Shift+Tab reaches an item as Backtab, and on some platforms as Tab
-        // with Shift still set, so both spellings move up. Plain Tab is the
-        // down key -- it used to accept the ghost completion, and nothing
-        // takes that job now.
+        // with Shift still set, so both spellings move up. Plain Tab moves
+        // down.
         if (key === Qt.Key_Up || (ctrl && key === Qt.Key_P)
                 || key === Qt.Key_Backtab || (key === Qt.Key_Tab && shift)) {
             root.moveUp();
@@ -366,12 +313,6 @@ Item {
         }
 
         return false;
-    }
-
-    function acceptCompletion() {
-        if (!root.ghostVisible) return;
-        input.text = root.prefix + root.completion;
-        input.cursorPosition = input.text.length;
     }
 
     function focusInput() {

@@ -149,7 +149,7 @@ ShellRoot {
                 && selection.auraEffect.target !== null,
             "the complete outline was not given one effect");
 
-        // The query wears the accent aura; the ghost and the prompt do not.
+        // The query wears the accent aura; the prompt does not.
         // tests/preview.qml proves the accent actually reaches the glass --
         // this only checks that the field is wired to the right colour and
         // the right radius, which is the part that can be read headlessly.

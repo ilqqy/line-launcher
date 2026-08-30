@@ -55,12 +55,6 @@ ShellRoot {
             height: implicitHeight
             y: Math.round((parent.height - implicitHeight) / 2)
 
-            // No completion anywhere in this suite: a ghost would open most of
-            // the gap on the first keystroke and then hold, which is the right
-            // behaviour but the wrong thing to measure. With the gap driven by
-            // the typed run alone, every key moves it by one character and the
-            // typing phase is twenty real retargets.
-            completion: ""
             revealed: true
         }
 

@@ -20,7 +20,6 @@ Usage:
 
 Options:
   --items N         show N result rows for this invocation
-  --no-ghost        disable ghost completion text
   --prompt TEXT     placeholder text for the input field
   --config PATH     use an alternate config.json
   -n, --namespace NAME
@@ -43,7 +42,6 @@ fi
 items=
 prompt=
 config=
-no_ghost=
 namespace=
 
 while [ $# -gt 0 ]; do
@@ -84,10 +82,6 @@ while [ $# -gt 0 ]; do
 		namespace=${1#*=}
 		shift
 		;;
-	--no-ghost)
-		no_ghost=1
-		shift
-		;;
 	-h | --help)
 		usage
 		exit 0
@@ -116,10 +110,6 @@ fi
 
 if [ -n "$namespace" ]; then
 	export LINE_LAUNCHER_NAMESPACE=$namespace
-fi
-
-if [ -n "$no_ghost" ]; then
-	export LINE_LAUNCHER_NO_GHOST=1
 fi
 
 if [ -n "$config" ]; then

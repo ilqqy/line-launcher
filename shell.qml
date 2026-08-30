@@ -368,14 +368,11 @@ ShellRoot {
                 height: implicitHeight
                 anchors.top: parent.top
 
-                prefix: shell.activePrefix
-                completion: shell.ranked.length > 0 ? shell.ranked[0].name : ""
                 collapsing: shell.closing === shell.closeCollapse
                 revealed: shell.entered
 
                 onAccepted: shell.activate()
                 onCancelled: shell.close(shell.closeFade)
-                onCompletionRequested: frame.acceptCompletion()
                 onMoveUp: shell.move(-1)
                 onMoveDown: shell.move(1)
                 onKeyActivity: key => shell.onKeyActivity(key)

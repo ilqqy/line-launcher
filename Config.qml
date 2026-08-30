@@ -140,7 +140,6 @@ Singleton {
     // ------------------------------------------------------- CLI overrides
 
     readonly property int itemsOverride: parseInt(Quickshell.env("LINE_LAUNCHER_ITEMS") || "", 10)
-    readonly property bool ghostDisabled: (Quickshell.env("LINE_LAUNCHER_NO_GHOST") || "") !== ""
 
     // --------------------------------------------------------- typography
 
@@ -205,7 +204,6 @@ Singleton {
 
     // ----------------------------------------------------------- behaviour
 
-    readonly property bool ghostEnabled: !root.ghostDisabled
     readonly property string prompt: Quickshell.env("LINE_LAUNCHER_PROMPT") || ""
 
     // The layer-shell namespace, handed to the compositor verbatim: whatever

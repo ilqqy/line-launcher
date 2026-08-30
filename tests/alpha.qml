@@ -75,7 +75,6 @@ ShellRoot {
                 height: implicitHeight
                 y: Config.snap((parent.height - implicitHeight) / 2)
 
-                completion: "Volume Control"
                 revealed: true
             }
 
@@ -163,9 +162,7 @@ ShellRoot {
                     "software renderer: every ShaderEffect is a no-op here, so "
                         + "a halo painting alpha it should not would go unseen");
 
-                // Enough of a query to open a real gap, with the completion
-                // supplying the rest: "vo" draws "lume Control" after the
-                // caret, and the frame opens around both.
+                // Enough of a query to exercise the typed field.
                 frame.inputItem.text = "vo";
                 break;
 

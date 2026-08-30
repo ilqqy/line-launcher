@@ -13,8 +13,6 @@ sides, plus a transparent result lane.
 - Rofi's drun matching and launch history, ported verbatim (see
   [Credits](#credits)) -- point it at `~/.cache/rofi3.druncache` and your
   existing rofi history carries over.
-- Ghost completion: typing `ste` draws `am` after the caret. A hint only --
-  no key accepts it, since Tab moves the selection.
 - Colours follow pywal / wallust / matugen at runtime. Change the wallpaper and
   a running launcher recolours -- no restart, no rebuild.
 - Works as a dmenu replacement when stdin is a pipe.
@@ -213,9 +211,8 @@ Turn it up if your wallpapers are brighter than mine.
 typed query. Nothing else. Wider and softer than the legibility glow --
 `auraRadius` 20, `auraOpacity` 0.35 -- so what you are steering and what it
 has landed on light up together. The typed query uses a much stronger version
-of that aura plus a maximum-contrast, semibold glyph colour. The ghost
-completion does not get either treatment: it is a suggestion, not something
-you typed. Neither does the prompt.
+of that aura plus a maximum-contrast, semibold glyph colour. The prompt does
+not get either treatment.
 
 Around the outline it is drawn in whatever colour the outline currently is, so
 it crossfades into `colors.danger` along with the stroke when an action asks
@@ -227,8 +224,7 @@ Both are traced from their complete silhouette. In particular, the outline is
 blurred as one rounded ring rather than as four separate edge shadows: adjacent
 edges therefore cannot stack their opacity into bright spots at the corners.
 The query uses 2.5 times `auraOpacity`, capped at 1.0, so the typed text reads
-brighter than the outline without changing the quieter ghost completion or
-prompt.
+brighter than the outline without changing the quieter prompt.
 
 Both radii are quoted at the default `fontSize` and scale with it: a halo is a
 proportion of the type it sits under, so a launcher configured larger gets a
@@ -345,10 +341,6 @@ kept in `$XDG_STATE_HOME/line-launcher/history.json`, capped at 200 entries.
 | `Enter` | launch the selection (twice, for a `confirm` action) |
 | `Esc` | close |
 
-Tab and Shift+Tab used to accept the ghost completion. Nothing is bound to
-that now -- the ghost is still drawn as a hint, but it is not something you
-can take.
-
 It opens by fading up while the two whiskers drift in from a tenth of the way
 out towards the screen edge, over 320ms.
 
@@ -384,7 +376,6 @@ center frame instead of blurring the entire monitor.
 | Flag | Effect |
 | --- | --- |
 | `--items N` | show `N` result rows for this invocation |
-| `--no-ghost` | disable ghost completion text |
 | `--prompt TEXT` | placeholder text for the input field |
 | `--config PATH` | use an alternate `config.json` |
 | `-n`, `--namespace NAME` | layer-shell namespace for the surface (default `line-launcher`) |

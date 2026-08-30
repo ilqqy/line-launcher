@@ -107,7 +107,6 @@ ShellRoot {
                     width: parent.width
                     height: implicitHeight
                     anchors.top: parent.top
-                    completion: "Volume Control"
                     Component.onCompleted: frame.inputItem.text = "Volume"
                 }
 
@@ -198,19 +197,14 @@ ShellRoot {
     }
 
     function reportRects() {
-        // The three pieces of text in the field, separately. They share one
-        // effect -- it traces the field, not the individual items -- but
-        // "shares an effect" is exactly the reasoning that has to be checked
-        // rather than assumed.
+        // The typed text and prompt in the field, separately.
         const typedX = frame.typedTextX;
         const typedWidth = frame.typedTextWidth;
         suite.rect("typed-text", frame.inputItem, typedX, typedWidth, "darker");
-        suite.rect("ghost-text", frame.ghostItem, 0, frame.ghostItem.contentWidth, "darker");
         suite.rect("prompt", promptFrame.promptItem, 0,
             promptFrame.promptItem.contentWidth, "darker");
 
-        // The accent aura, which only the typed run wears -- the ghost is a
-        // suggestion and the prompt is furniture, and neither was typed.
+        // The accent aura is only on the typed run; the prompt is furniture.
         suite.rect("typed-query-accent", frame.inputItem, typedX, typedWidth, "warmer");
 
         for (let i = 0; i < list.children.length; i++) {

@@ -335,7 +335,9 @@ ShellRoot {
         Item {
             id: content
 
-            anchors.centerIn: parent
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: Config.topMargin
             width: parent.width
             height: frame.implicitHeight + Config.frameToListGap + list.implicitHeight
 

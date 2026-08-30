@@ -59,6 +59,7 @@ ShellRoot {
             suite.check("frameWidth from config.json", Config.frameWidth, 300);
             suite.check("frameHeight default", Config.frameHeight, 44);
             suite.check("frameFillOpacity default", Config.frameFillOpacity, 0.42);
+            suite.check("topMargin default", Config.topMargin, 36);
             suite.check("whiskerLength default", Config.whiskerLength, 120);
             suite.check("hookLength default", Config.hookLength, 16);
             suite.check("visibleItems from --items", Config.visibleItems, 9);
@@ -73,8 +74,13 @@ ShellRoot {
 
             // --- ghost text -----------------------------------------------
             frame.inputItem.text = "ste";
+            suite.check("typed text is centred", frame.inputItem.horizontalAlignment,
+                TextInput.AlignHCenter);
             suite.check("prefix match shows ghost", frame.ghostVisible, true);
             suite.check("ghost is the remainder", frame.ghostText, "am");
+            suite.check("ghost follows centred typed text",
+                frame.ghostItem.x.toFixed(2),
+                (frame.typedTextX + frame.typedTextWidth).toFixed(2));
 
             frame.inputItem.text = "vlc";
             frame.completion = "Volume Control";

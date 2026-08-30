@@ -36,6 +36,7 @@ Singleton {
         "frameWidth": 260,
         "frameHeight": 44,
         "frameFillOpacity": 0.42,
+        "topMargin": 36,
         "whiskerLength": 120,
         "hookLength": 16,
         "visibleItems": 5,
@@ -152,6 +153,7 @@ Singleton {
     readonly property int frameHeight: root.data.frameHeight
     readonly property real frameFillOpacity:
         Math.max(0, Math.min(1, root.data.frameFillOpacity))
+    readonly property int topMargin: root.data.topMargin
     readonly property int whiskerLength: root.data.whiskerLength
     // Kept in the JSON schema for compatibility with older configurations.
     // The boxed frame no longer has separate vertical hooks.
@@ -172,9 +174,9 @@ Singleton {
     // Result-row metrics. Derived from the font size rather than exposed as
     // options: they are proportions of the type, not independent knobs.
     readonly property int rowHeight: Math.round(root.fontSize * 2.4)
-    readonly property int rowStep: Math.round(root.fontSize * 3.0)
+    readonly property int rowStep: Math.round(root.fontSize * 2.7)
     readonly property real cornerRadius: 4
-    readonly property real frameToListGap: Math.round(root.fontSize * 1.6)
+    readonly property real frameToListGap: Math.round(root.fontSize * 0.75)
 
     // --------------------------------------------------------------- glow
 

@@ -260,6 +260,12 @@ in rec {
       '';
     };
 
+    topMargin = mkOption {
+      type = types.ints.unsigned;
+      default = 36;
+      description = "Distance in pixels from the monitor's top edge to the launcher frame.";
+    };
+
     whiskerLength = mkOption {
       type = types.ints.positive;
       default = 120;
@@ -376,6 +382,7 @@ in rec {
           frameWidth
           frameHeight
           frameFillOpacity
+          topMargin
           whiskerLength
           hookLength
           visibleItems

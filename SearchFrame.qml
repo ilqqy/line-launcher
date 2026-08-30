@@ -20,6 +20,9 @@ Item {
     readonly property alias promptItem: prompt
     readonly property alias ghostItem: ghost
     readonly property alias queryAura: queryAura
+    readonly property real typedTextX:
+        Math.max(0, (field.width - typedMetrics.advanceWidth) / 2)
+    readonly property real typedTextWidth: typedMetrics.advanceWidth
 
     // Full name of the current top result. When the typed text is a prefix of
     // it, the remainder is drawn as ghost text. Set by the shell; when the
@@ -261,7 +264,7 @@ Item {
 
             anchors.fill: parent
             verticalAlignment: TextInput.AlignVCenter
-            horizontalAlignment: TextInput.AlignLeft
+            horizontalAlignment: TextInput.AlignHCenter
 
             color: Theme.queryForeground
             selectionColor: Theme.activeAccent
@@ -288,7 +291,7 @@ Item {
         Text {
             id: prompt
 
-            anchors.left: parent.left
+            anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
             visible: input.text.length === 0 && Config.prompt !== ""
             text: Config.prompt
@@ -303,17 +306,21 @@ Item {
             id: typedMetrics
             font.pixelSize: input.font.pixelSize
             font.family: input.font.family
+            font.weight: input.font.weight
             text: input.text
         }
 
         Text {
             id: ghost
-            x: typedMetrics.advanceWidth
+            // The real TextInput centres the typed run. Start the completion
+            // exactly at that run's right edge.
+            x: root.typedTextX + root.typedTextWidth
             anchors.verticalCenter: parent.verticalCenter
             visible: root.ghostVisible
             text: root.ghostText
             color: Theme.muted
-            font: input.font
+            font.pixelSize: input.font.pixelSize
+            font.family: input.font.family
             // The ghost is decoration: it must never intercept clicks or
             // widen the field.
             width: Math.max(0, parent.width - x)

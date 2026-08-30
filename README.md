@@ -92,6 +92,7 @@ shorter.
     frameWidth = 260;                   # central search box
     frameHeight = 44;
     frameFillOpacity = 0.42;            # lets compositor blur show through
+    topMargin = 36;                     # directly beneath the top bar
     whiskerLength = 120;
     visibleItems = 5;
     listPerspective = 0;                # 1 fans the rows away from you
@@ -133,6 +134,7 @@ The modules only write a JSON file. Put the same thing at
   "frameWidth": 260,
   "frameHeight": 44,
   "frameFillOpacity": 0.42,
+  "topMargin": 36,
   "whiskerLength": 120,
   "visibleItems": 5,
   "listPerspective": 0,

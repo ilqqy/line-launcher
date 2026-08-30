@@ -45,7 +45,7 @@ Item {
         NumberAnimation {
             // Slower than the 160ms close and eased the other way round: the
             // whiskers arrive fast and settle, rather than leaving slowly.
-            duration: 320
+            duration: 90
             easing.type: Easing.OutCubic
         }
     }

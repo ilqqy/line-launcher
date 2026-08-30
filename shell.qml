@@ -356,7 +356,7 @@ ShellRoot {
                     // the whiskers' own clock so the frame finishes arriving
                     // and finishes appearing together.
                     duration: shell.closing === shell.closeNone
-                        ? 320
+                        ? 90
                         : (shell.closing === shell.closeCollapse ? 160 : 110)
                     easing.type: shell.closing === shell.closeNone
                         ? Easing.OutQuad

@@ -48,6 +48,12 @@ QtObject {
     // Its prefix still switches to that provider exclusively when typed.
     property bool participatesWithoutPrefix: false
 
+    // Lower values are shown first when multiple providers participate in a
+    // combined search. Matching still determines the order within a provider.
+    // This keeps an exact copy of the typed shell command from hiding a real
+    // application whose name is only a prefix match.
+    property int resultPriority: 0
+
     // Set false to drop out of ranking entirely -- dmenu mode switches the
     // application providers off this way.
     property bool available: true

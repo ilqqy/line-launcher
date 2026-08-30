@@ -16,6 +16,10 @@ Provider {
     providerId: "command"
     prefix: ">"
     participatesWithoutPrefix: true
+    // Applications and actions should be suggestions before the raw command
+    // candidate in combined search. In > mode every result has this same
+    // priority, so normal command-history ranking is unchanged.
+    resultPriority: 10
 
     // Its own history lives in history.json, so command launches stay out of
     // the shared drun cache.

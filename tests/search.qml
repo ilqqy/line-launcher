@@ -187,6 +187,16 @@ ShellRoot {
             suite.check("commands also join normal search",
                 suite.commands.participatesWithoutPrefix, true);
 
+            const discord = suite.app("Discord", "discord");
+            const combinedCommands = [discord].concat(suite.commands.candidates("disc"));
+            suite.check("an application ranks above the raw typed command",
+                suite.names(suite.search("disc", combinedCommands)), "Discord,disc");
+            suite.check("the raw command remains available after the application",
+                suite.search("disc", combinedCommands)[1].source.providerId, "command");
+            suite.check("a command with no application match is still first",
+                suite.names(suite.search("cliphist wipe",
+                    suite.commands.candidates("cliphist wipe"))), "cliphist wipe");
+
             // --- dmenu ------------------------------------------------------
             suite.dmenu.lines = [
                 "plain line",

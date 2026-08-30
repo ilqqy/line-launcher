@@ -30,6 +30,7 @@ pipelines such as `cliphist`.
 - Rofi-compatible application matching, ranking, and launch history.
 - Normal, glob, fuzzy, regex, and prefix matching methods.
 - Shell-command history with an optional command-only `>` prefix.
+- Applications and actions rank above raw command candidates in combined search.
 - Dmenu-compatible piped input, including `cliphist` tab-column handling.
 - Confirm-before-running support for dangerous actions.
 - Live pywal, wallust, matugen, or Stylix colours.
@@ -198,7 +199,8 @@ shows only the input frame until something has been launched.
 ### Shell commands
 
 Shell commands participate in ordinary search alongside applications and
-actions. Type a command such as:
+actions, but matching applications/actions are presented first. Type a command
+such as:
 
 ```text
 cliphist wipe
@@ -500,7 +502,7 @@ The launcher selects Hyprland's focused monitor, occupies a transparent layer
 surface, and places only its visible content at the top centre. `topMargin`
 controls its distance beneath a panel or clock.
 
-The centre frame fades in while its whiskers drift into position over 320 ms.
+The centre frame fades in while its whiskers drift into position over 90 ms.
 Launching a result collapses the box to a line, sends the whiskers outward,
 and flattens the result selection. Escape uses a shorter plain fade so
 launching and cancelling remain visually distinct.

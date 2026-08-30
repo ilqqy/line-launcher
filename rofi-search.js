@@ -432,6 +432,14 @@ function completionName(app) {
     return app.name || "";
 }
 
+function providerPriority(entry) {
+    if (!entry || !entry.source)
+        return 0;
+
+    var value = Number(entry.source.resultPriority);
+    return isNaN(value) ? 0 : value;
+}
+
 function desktopIdForApp(app) {
     if (!app || !app.entry)
         return "";
@@ -727,6 +735,18 @@ function search(query, applications, options) {
             });
         }
     }
+
+    // Preserve Rofi's ordering inside each provider, but let the provider
+    // decide which class of result is presented first. Array.sort stability
+    // differs between older QML JS engines, so retain the post-Rofi position
+    // explicitly as the tie-breaker.
+    for (var r = 0; r < results.length; r++)
+        results[r].rankIndex = r;
+
+    results.sort(function(a, b) {
+        var priorityDifference = providerPriority(a.entry) - providerPriority(b.entry);
+        return priorityDifference !== 0 ? priorityDifference : a.rankIndex - b.rankIndex;
+    });
 
     return results.map(function(result) { return result.entry; });
 }

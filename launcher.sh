@@ -19,6 +19,7 @@ Usage:
   <command> | line-launcher [OPTIONS]      # dmenu mode
 
 Options:
+  --toggle          close the running launcher, or open it if it is not running
   --items N         show N result rows for this invocation
   --prompt TEXT     placeholder text for the input field
   --config PATH     use an alternate config.json
@@ -43,9 +44,14 @@ items=
 prompt=
 config=
 namespace=
+toggle=
 
 while [ $# -gt 0 ]; do
 	case $1 in
+	--toggle)
+		toggle=1
+		shift
+		;;
 	--items)
 		[ $# -ge 2 ] || { echo "line-launcher: --items needs a value" >&2; exit 2; }
 		items=$2
@@ -94,6 +100,14 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
+# A compositor hotkey needs toggle semantics: invoking the same command a
+# second time closes this exact Quickshell configuration.  `qs kill` exits
+# non-zero when no matching instance exists, in which case we continue and
+# launch one below.
+if [ -n "$toggle" ] && qs kill --path "$qml_dir" >/dev/null 2>&1; then
+	exit 0
+fi
+
 if [ -n "$items" ]; then
 	case $items in
 	'' | *[!0-9]*)
@@ -125,7 +139,7 @@ runtime_dir=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/line-launcher.XXXXXX")
 trap 'rm -rf -- "$runtime_dir"' EXIT INT TERM
 
 dmenu=
-if [ ! -t 0 ]; then
+if [ -z "$toggle" ] && [ ! -t 0 ]; then
 	dmenu=1
 	cat >"$runtime_dir/stdin"
 	export LINE_LAUNCHER_DMENU_IN="$runtime_dir/stdin"

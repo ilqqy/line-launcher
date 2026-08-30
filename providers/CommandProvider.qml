@@ -3,7 +3,8 @@ import Quickshell
 import Quickshell.Io
 import "root:/" as Root
 
-// Arbitrary shell commands, reached with the ">" prefix.
+// Arbitrary shell commands. They participate in the normal combined search,
+// while the optional ">" prefix still switches to command-only mode.
 //
 // The list shows previously executed commands, matched against whatever
 // follows the ">". The typed command itself is always offered first, so a
@@ -14,6 +15,7 @@ Provider {
 
     providerId: "command"
     prefix: ">"
+    participatesWithoutPrefix: true
 
     // Its own history lives in history.json, so command launches stay out of
     // the shared drun cache.

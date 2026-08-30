@@ -44,6 +44,10 @@ QtObject {
     // Empty means the provider takes part in the unprefixed list.
     property string prefix: ""
 
+    // A prefixed provider can also opt into the ordinary combined search.
+    // Its prefix still switches to that provider exclusively when typed.
+    property bool participatesWithoutPrefix: false
+
     // Set false to drop out of ranking entirely -- dmenu mode switches the
     // application providers off this way.
     property bool available: true

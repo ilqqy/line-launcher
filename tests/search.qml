@@ -184,6 +184,8 @@ ShellRoot {
             suite.check("command history is not the drun cache",
                 suite.commands.usesDrunHistory, false);
             suite.check("command prefix is >", suite.commands.prefix, ">");
+            suite.check("commands also join normal search",
+                suite.commands.participatesWithoutPrefix, true);
 
             // --- dmenu ------------------------------------------------------
             suite.dmenu.lines = [

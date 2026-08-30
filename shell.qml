@@ -68,9 +68,12 @@ ShellRoot {
             const provider = shell.providers[i];
             if (!provider.available) continue;
 
-            // With a prefix active, only that provider runs; otherwise only
-            // the unprefixed ones do.
-            if (active !== null ? provider !== active : provider.prefix !== "") continue;
+            // With a prefix active, only that provider runs. Otherwise use
+            // ordinary unprefixed providers plus sources such as shell
+            // commands that explicitly join the combined search.
+            if (active !== null
+                    ? provider !== active
+                    : (provider.prefix !== "" && !provider.participatesWithoutPrefix)) continue;
 
             records = records.concat(provider.candidates(text));
         }

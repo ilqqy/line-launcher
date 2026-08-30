@@ -265,7 +265,7 @@ These are read from `config.json` only. The defaults are stock
 | `preferNameMatch` | `true` | a name hit outranks an exec hit |
 | `normalizeMatch` | `false` | strip accents before matching |
 | `drunCache` | `$XDG_CACHE_HOME/line-launcher.druncache` | launch history, in rofi's format |
-| `commandAccent` | unset | accent used while the `>` prefix is active |
+| `commandAccent` | unset | accent used in optional `>` command-only mode |
 
 Set `drunCache` to `"rofi3.druncache"` to share launch history with rofi
 itself -- the file format is byte-for-byte the same.
@@ -327,10 +327,12 @@ the `cliphist` pipeline above work. The displayed part is truncated at
 
 ## Command mode
 
-Input beginning with `>` runs a shell command instead of searching
-applications. The list shows previously executed commands; the typed command is
-always offered first, so a plain Enter runs exactly what you typed. History is
-kept in `$XDG_STATE_HOME/line-launcher/history.json`, capped at 200 entries.
+Shell commands participate in the normal search alongside applications and
+actions. Type a command such as `cliphist wipe` and its exact command result is
+offered directly; Enter executes it through `sh -c`. Beginning the input with
+`>` remains available as command-only mode. The list also searches previously
+executed commands, with history kept in
+`$XDG_STATE_HOME/line-launcher/history.json` and capped at 200 entries.
 
 ## Keybindings
 

@@ -440,6 +440,15 @@ function providerPriority(entry) {
     return isNaN(value) ? 0 : value;
 }
 
+// Empty application search is intentionally history-only, while dmenu must
+// preserve and display the caller's input immediately. A prefixed provider
+// owns its own empty ordering policy.
+function emptyOrderMode(activeProvider, dmenuMode) {
+    if (activeProvider !== null && activeProvider !== undefined)
+        return activeProvider.orderWhenEmpty;
+    return dmenuMode ? "asIs" : "history";
+}
+
 function desktopIdForApp(app) {
     if (!app || !app.entry)
         return "";

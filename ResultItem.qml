@@ -40,7 +40,7 @@ Item {
             width: root.width - x - root.leftPadding
 
             text: root.name
-            color: root.active ? Theme.foreground : Theme.muted
+            color: root.active ? Theme.foreground : Theme.resultMuted
             font.pixelSize: Theme.fontSize
             font.family: Theme.fontFamily !== "" ? Theme.fontFamily : font.family
             elide: Text.ElideRight

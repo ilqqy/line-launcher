@@ -311,6 +311,9 @@ according to `maxCharacters`.
 
 Typed text is centred in the frame. There is deliberately no inline or ghost
 autocomplete; the highlighted row is the only completion suggestion.
+Unselected results remain slightly dimmer than the selection, but use a
+brighter foreground than the placeholder so lower rows stay readable over the
+wallpaper.
 
 ## Complete Home Manager/NixOS configuration
 

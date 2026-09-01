@@ -91,7 +91,7 @@ ShellRoot {
             //
             // Piped menus and command history keep the order they came in;
             // their order is the caller's, not a ranking.
-            const mode = active !== null ? active.orderWhenEmpty : "history";
+            const mode = RofiSearch.emptyOrderMode(active, Config.dmenuMode);
             if (mode !== "history") return records.map(record => record.entry);
 
             const known = records.filter(record =>

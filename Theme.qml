@@ -204,6 +204,12 @@ Singleton {
     readonly property real mutedAlpha: 0.45
     readonly property color muted: Qt.alpha(root.foreground, root.mutedAlpha)
 
+    // Result rows sit over the wallpaper and also receive the lane's depth
+    // fade, so sharing the prompt's quiet 45% alpha makes lower rows too hard
+    // to read. Keep them subdued, but give them enough contrast to scan.
+    readonly property real resultMutedAlpha: 0.62
+    readonly property color resultMuted: Qt.alpha(root.foreground, root.resultMutedAlpha)
+
     // A provider may claim its own accent (CommandProvider does, once the ">"
     // prefix is active). Setting this to a transparent colour means "no
     // override, use the global accent". The transition is animated so

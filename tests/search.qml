@@ -214,6 +214,12 @@ ShellRoot {
                 piped[2].entry.value.length, 82);
             suite.check("piped order is preserved", suite.dmenu.orderWhenEmpty, "asIs");
             suite.check("dmenu mode detected from the environment", Config.dmenuMode, true);
+            suite.check("empty dmenu uses caller order",
+                RofiSearch.emptyOrderMode(null, true), "asIs");
+            suite.check("empty application search remains history-only",
+                RofiSearch.emptyOrderMode(null, false), "history");
+            suite.check("a prefixed provider keeps its own empty ordering",
+                RofiSearch.emptyOrderMode(suite.commands, false), "asIs");
 
             // The whole point of dmenu mode: activate writes the original
             // line, not the displayed column, and blockWrites puts it on disk

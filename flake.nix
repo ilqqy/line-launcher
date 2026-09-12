@@ -68,12 +68,15 @@
           export QML_IMPORT_PATH="${quickshellPkg}/lib/qt-6/qml''${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
           export QML2_IMPORT_PATH="$QML_IMPORT_PATH"
 
-          cat > .qmlls.ini <<EOF
+          # Replace the generated file atomically, including stale VFS symlinks.
+          qmlls_config_tmp=$(mktemp .qmlls.ini.XXXXXX)
+          cat > "$qmlls_config_tmp" <<EOF
           [General]
           buildDir=.
           importPaths=${quickshellPkg}/lib/qt-6/qml:${pkgs.qt6.qtdeclarative}/lib/qt-6/qml
           EOF
-          sed -i 's/^ *//' .qmlls.ini
+          sed -i 's/^ *//' "$qmlls_config_tmp"
+          mv -f -- "$qmlls_config_tmp" .qmlls.ini
 
           echo "line-launcher dev shell"
           echo "  qs -p .          run the launcher from this checkout"

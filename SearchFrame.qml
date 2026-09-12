@@ -18,6 +18,9 @@ Item {
     // Exposed so tests can point at the field's text and prompt separately.
     readonly property alias promptItem: prompt
     readonly property alias queryAura: queryAura
+    readonly property alias fillItem: frameBox
+    readonly property alias leftWhiskerItem: leftWhisker
+    readonly property alias rightWhiskerItem: rightWhisker
     readonly property real typedTextX:
         Math.max(0, (field.width - typedMetrics.advanceWidth) / 2)
     readonly property real typedTextWidth: typedMetrics.advanceWidth
@@ -28,7 +31,7 @@ Item {
     signal moveDown()
     // Emitted for every key press, so the shell can drop out of the confirm
     // state on "any other key".
-    signal keyActivity(int key)
+    signal keyActivity(int key, int modifiers)
 
     // ----------------------------------------------------- entry animation
 
@@ -248,7 +251,7 @@ Item {
             clip: true
 
             Keys.onPressed: event => {
-                event.accepted = root.handleKey(event.key, event.modifiers);
+                event.accepted = root.handleKey(event.key, event.modifiers, event.isAutoRepeat);
             }
         }
 
@@ -260,6 +263,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             visible: input.text.length === 0 && Config.prompt !== ""
             text: Config.prompt
+            textFormat: Text.PlainText
             color: Theme.muted
             font.pixelSize: input.font.pixelSize
             font.family: input.font.family
@@ -282,18 +286,20 @@ Item {
     // cannot be constructed from QML, so inline handling could only ever be
     // tested by a real compositor delivering real keys. Takes what the event
     // carries, returns whether the key was consumed.
-    function handleKey(key: int, modifiers: int): bool {
-        root.keyActivity(key);
-
+    function handleKey(key: int, modifiers: int, autoRepeat: bool): bool {
         const ctrl = (modifiers & Qt.ControlModifier) !== 0;
         const shift = (modifiers & Qt.ShiftModifier) !== 0;
+        const accepts = key === Qt.Key_Return || key === Qt.Key_Enter || (ctrl && key === Qt.Key_M);
+        // Holding Enter must not count as a second confirmation press.
+        if (accepts && autoRepeat) return true;
+        root.keyActivity(key, modifiers);
 
         if (key === Qt.Key_Escape) {
             root.cancelled();
             return true;
         }
 
-        if (key === Qt.Key_Return || key === Qt.Key_Enter || (ctrl && key === Qt.Key_M)) {
+        if (accepts) {
             root.accepted();
             return true;
         }

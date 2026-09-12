@@ -170,9 +170,10 @@ Item {
     implicitHeight: root.projectedCentre(root.visibleItems - 1)
         + root.rowHeight / (2 * root.projectionFor(root.visibleItems - 1))
 
-    // How faint the last row in the window is. The ramp runs from full strength
-    // at the top slot down to this at the bottom one.
-    readonly property real tailOpacity: 0.45
+    // Keep every visible result fully readable. Perspective already supplies
+    // the visual depth; fading the lower rows multiplied with the muted text
+    // alpha and made application names disappear into detailed wallpapers.
+    readonly property real tailOpacity: 1.0
 
     // Rows fade with how far down the lane they sit, not with how far they are
     // from the selection. Keying it to the selection meant the whole list

@@ -68,8 +68,11 @@ ShellRoot {
             suite.check("accent from accentKey", Theme.accent, "#0000ff");
             suite.check("danger falls back to color1", Theme.danger, "#ff0000");
             suite.check("muted is foreground at 0.45", Theme.muted.a.toFixed(2), "0.45");
-            suite.check("unselected results are brighter than the prompt",
-                Theme.resultMuted.a.toFixed(2), "0.62");
+            suite.check("unselected results stay strongly readable",
+                Theme.resultMuted.a.toFixed(2), "0.90");
+            suite.check("result shadow opposes result text",
+                Theme.resultBackdrop.hslLightness.toFixed(0),
+                Theme.resultForeground.hslLightness > 0.5 ? "0" : "1");
             suite.check("activeAccent tracks accent", Theme.activeAccent, Theme.accent);
 
             // --- centred input --------------------------------------------

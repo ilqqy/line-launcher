@@ -219,6 +219,10 @@ Executed commands are saved most-recent-first in
 `$XDG_STATE_HOME/line-launcher/history.json`. Duplicate commands are moved to
 the top, and history is capped at 200 entries.
 
+Command matching treats shell flags and punctuation literally, even when an
+application matching mode such as regex is configured. The exact typed command
+comes before matching command-history entries, which retain their recency order.
+
 Commands have the same authority as commands entered in a terminal. Review a
 command before pressing Enter, especially if it modifies or deletes files.
 
@@ -260,7 +264,8 @@ Actions are matched by both `name` and `exec`, so `poweroff` finds the
 
 When `confirm = true`, the first Enter arms the action: the selection changes
 to the danger colour and `confirm` appears on the right. A second Enter runs
-the action. Any non-modifier key cancels confirmation.
+the action. Holding Enter does not confirm; it needs a second press. `Ctrl+m`
+also confirms. Other non-modifier keys and a changed selection cancel confirmation.
 
 Set `terminal = true` on an action to run it inside the configured terminal.
 The legacy `icon` action field is accepted for compatibility but ignored,
@@ -311,9 +316,9 @@ according to `maxCharacters`.
 
 Typed text is centred in the frame. There is deliberately no inline or ghost
 autocomplete; the highlighted row is the only completion suggestion.
-Unselected results remain slightly dimmer than the selection, but use a
-brighter foreground than the placeholder so lower rows stay readable over the
-wallpaper.
+Unselected results remain slightly dimmer than the selection, but use an
+adaptive maximum-contrast foreground and a tight opposite-colour shadow so
+lower rows stay readable over mixed wallpapers without adding a result panel.
 
 ## Complete Home Manager/NixOS configuration
 
@@ -512,8 +517,9 @@ launching and cancelling remain visually distinct.
 
 The selection outline and result lane animate together when navigating. With
 `listPerspective = 0`, results form an evenly spaced straight list. Values up
-to `1` progressively narrow and tilt lower rows into a receding fan. Result
-opacity follows lane depth rather than distance from the selection.
+to `1` progressively narrow and tilt lower rows into a receding fan.
+Visible rows stay fully opaque; perspective supplies the depth without making
+lower application names harder to read.
 
 ## Command-line reference
 

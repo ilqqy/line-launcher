@@ -7,7 +7,24 @@ set -euo pipefail
 
 repo=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 work=$(mktemp -d)
-trap 'rm -rf -- "$work"' EXIT INT TERM
+xvfb_pid=
+# shellcheck disable=SC2329 # Invoked by the EXIT trap.
+cleanup() {
+	if [ -n "$xvfb_pid" ]; then
+		kill "$xvfb_pid" 2>/dev/null || true
+		wait "$xvfb_pid" 2>/dev/null || true
+	fi
+	rm -rf -- "$work"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# Tests must not share Quickshell IPC/runtime state with the desktop session.
+export XDG_RUNTIME_DIR="$work/runtime"
+mkdir -m 700 "$XDG_RUNTIME_DIR"
+export XDG_CONFIG_HOME="$work/config"
+unset WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE
 
 cp -r -- "$repo"/*.qml "$repo"/*.js "$repo"/qmldir "$work/"
 if [ -d "$repo/providers" ]; then
@@ -48,14 +65,24 @@ export QT_QPA_PLATFORM=offscreen
 
 run_suite() {
 	cp -- "$1" "$work/shell.qml"
-	qs --path "$work" 2>&1 | sed -n 's/^.*qml\x1b\[0m: //p'
+	local log="$work/suite.log" result=0
+	timeout 30s qs --no-color --path "$work" >"$log" 2>&1 || result=$?
+	# Keep errors and warnings visible as well as QML assertions.
+	sed 's/^.*qml: //' "$log"
+	if [ "$result" -ne 0 ]; then
+		return "$result"
+	fi
+	# A clean process exit without reaching the assertions is not a pass.
+	grep -qE 'qml: PASS$' "$log"
 }
 
 status=0
+echo "== wrapper"
+bash "$repo/tests/wrapper.sh" || status=1
 for test_file in "$repo"/tests/*.qml; do
 	name=$(basename -- "$test_file" .qml)
 	# Needs a different environment; run separately below.
-	if [ "$name" = "detect" ] || [ "$name" = "preview" ] || [ "$name" = "glow" ]; then
+	if [[ "$name" =~ ^(detect|preview|glow|alpha|smooth)$ ]]; then
 		continue
 	fi
 	echo "== $name"
@@ -107,13 +134,17 @@ fi
 # glow there would prove nothing, so this one wants a real X server. Any will
 # do; Xvfb is the one that needs no display.
 if command -v Xvfb >/dev/null 2>&1; then
-	Xvfb :99 -screen 0 1024x768x24 +extension GLX >"$work/xvfb.log" 2>&1 &
+	Xvfb -displayfd 3 -screen 0 1024x768x24 +extension GLX 3>"$work/display" >"$work/xvfb.log" 2>&1 &
 	xvfb_pid=$!
 	# Give the server a moment to come up before anything connects to it.
 	for _ in $(seq 1 40); do
-		[ -e /tmp/.X11-unix/X99 ] && break
+		[ -s "$work/display" ] && break
 		sleep 0.1
 	done
+	if [ ! -s "$work/display" ] || ! kill -0 "$xvfb_pid" 2>/dev/null; then
+		cat "$work/xvfb.log" >&2
+		exit 1
+	fi
 
 	# A realistic palette rather than the primary colours the assertion
 	# suites use, since the point of this one is to be looked at.
@@ -135,24 +166,70 @@ JSON
 	# The same configuration, with the glow switched off -- so the two
 	# previews differ in exactly one setting.
 	sed 's/^{ /{ "glowEnabled": false, /' "$work/preview-config.json" >"$work/glow-off.json"
+	# Isolate the dark legibility halo from the brighter coloured aura; their
+	# combined brightness cannot prove whether the dark halo was rendered.
+	sed 's/^{ /{ "auraOpacity": 0, /' "$work/preview-config.json" >"$work/halo-only.json"
 
 	preview_out=${LINE_LAUNCHER_PREVIEW_DIR:-}
+	if [ -n "$preview_out" ]; then mkdir -p -- "$preview_out"; fi
 
 	# Switched over wholesale rather than per-run: a subshell would keep the
 	# changes local, but it would also swallow the exit status the loop
 	# below needs.
 	export QT_QPA_PLATFORM=xcb
-	export DISPLAY=:99
+	DISPLAY=":"$(cat "$work/display")
+	export DISPLAY
 	export LINE_LAUNCHER_ITEMS=5
 
 	shots=$work/shots
 	mkdir -p "$shots"
 	rects=
+	export LINE_LAUNCHER_CONFIG="$work/preview-config.json"
+	echo "== smooth (Xvfb)"
+	run_suite "$repo/tests/smooth.qml" || status=1
+	echo "== alpha (Xvfb)"
+	if ! alpha_log=$(LINE_LAUNCHER_ALPHA_DIR="$shots" run_suite "$repo/tests/alpha.qml"); then
+		status=1
+	fi
+	printf '%s\n' "$alpha_log"
+	if [ -n "$preview_out" ]; then cp -- "$shots"/alpha-*.png "$preview_out/"; fi
+	if command -v magick >/dev/null 2>&1; then
+		zones=$(printf '%s\n' "$alpha_log" | sed -n 's/^ *ZONE //p')
+		if [ -z "$zones" ]; then
+			echo "FAIL alpha suite did not report any measurement regions"
+			status=1
+		fi
+		while read -r state region x y w h minimum; do
+			[ -n "$state" ] || continue
+			if [ "$region" = box ]; then
+				outside=$(magick "$shots/alpha-$state.png" -alpha extract \
+					-fill black -draw "rectangle $x,$y $w,$h" -format '%[fx:maxima.r]' info:)
+				if awk -v value="$outside" 'BEGIN { exit !(value == 0) }'; then
+					echo "ok   $state surface is fully transparent outside the content"
+				else
+					echo "FAIL $state surface paints outside the content (alpha=$outside)"
+					status=1
+				fi
+			else
+				alpha=$(magick "$shots/alpha-$state.png" -alpha extract \
+					-crop "${w}x${h}+${x}+${y}" +repage -format '%[fx:minima.r]' info:)
+				if awk -v value="$alpha" -v minimum="$minimum" 'BEGIN { exit !(value >= minimum - 0.005) }'; then
+					echo "ok   frame fill covers the entire input box"
+				else
+					echo "FAIL frame fill has transparent holes"
+					status=1
+				fi
+			fi
+		done <<<"$zones"
+	fi
 
-	for variant in glow plain; do
+	for variant in glow halo plain; do
 		if [ "$variant" = "glow" ]; then
 			echo "== preview (Xvfb)"
 			export LINE_LAUNCHER_CONFIG="$work/preview-config.json"
+		elif [ "$variant" = "halo" ]; then
+			echo "== preview, legibility halo only (Xvfb)"
+			export LINE_LAUNCHER_CONFIG="$work/halo-only.json"
 		else
 			echo "== preview, glow disabled (Xvfb)"
 			export LINE_LAUNCHER_CONFIG="$work/glow-off.json"
@@ -183,6 +260,10 @@ JSON
 	# two renders and has to have got darker.
 	if command -v magick >/dev/null 2>&1; then
 		echo "== preview pixels (Xvfb)"
+		if [ -z "$rects" ]; then
+			echo "FAIL preview did not report any measurement regions"
+			status=1
+		fi
 		while read -r name x y w h metric; do
 			[ -n "$name" ] || continue
 			crop="${w}x${h}+${x}+${y}"
@@ -191,16 +272,18 @@ JSON
 			# blue, which is where the accent shows and a neutral halo
 			# does not.
 			if [ "$metric" = "warmer" ]; then
+				lit_image="$shots/glow.png"
 				format='%[fx:mean.b-mean.r]'
 				expected="carrying the accent"
 				missing="has no accent aura"
 			else
+				lit_image="$shots/halo.png"
 				format='%[fx:mean]'
 				expected="sitting in its own halo"
 				missing="has no halo"
 			fi
 
-			lit=$(magick "$shots/glow.png" -background white -alpha remove \
+			lit=$(magick "$lit_image" -background white -alpha remove \
 				-crop "$crop" +repage -format "$format" info:)
 			bare=$(magick "$shots/plain.png" -background white -alpha remove \
 				-crop "$crop" +repage -format "$format" info:)
@@ -226,6 +309,7 @@ EOF
 
 	kill "$xvfb_pid" 2>/dev/null || true
 	wait "$xvfb_pid" 2>/dev/null || true
+	xvfb_pid=
 else
 	echo "== preview  SKIPPED (no Xvfb on PATH; nix develop provides one)"
 fi
@@ -235,7 +319,7 @@ fi
 # anyway still compiles every component and resolves every type and import in
 # the file, so anything but that one expected error is a real failure.
 echo "== shell.qml loads"
-load_log=$(qs --path "$repo" 2>&1 || true)
+load_log=$(timeout 15s qs --no-color --path "$repo" 2>&1 || true)
 if printf '%s' "$load_log" | grep -q "No PanelWindow backend loaded"; then
 	unexpected=$(printf '%s' "$load_log" | grep -E "ERROR|WARN.*scene" | grep -v "No PanelWindow backend loaded" | grep -v "Failed to load configuration" || true)
 	if [ -n "$unexpected" ]; then

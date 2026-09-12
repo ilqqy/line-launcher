@@ -11,6 +11,19 @@ Item {
 
     readonly property real leftPadding: 14
 
+    // Keep contrast predictable even over bright or detailed wallpaper.
+    // Outside the traced content so the text halo never blurs the backing.
+    Rectangle {
+        anchors.fill: parent
+        z: -2
+        radius: Config.cornerRadius
+        color: Qt.alpha(Theme.resultBackdrop, root.active ? 0.82 : 0.72)
+
+        Behavior on color {
+            ColorAnimation { duration: 140; easing.type: Easing.OutCubic }
+        }
+    }
+
     // The legibility halo, traced from the label.
     //
     // It is a child of the row, so it sits inside the row's opacity and inside
@@ -25,6 +38,11 @@ Item {
     Glow {
         anchors.fill: content
         target: content
+        // Tighter and stronger than the decorative frame glow: this behaves
+        // like a readable text shadow over a wallpaper, not a broad aura.
+        blurRadius: Config.glowRadius * 0.5
+        strength: Math.max(Config.glowOpacity, 0.9)
+        colour: Theme.resultBackdrop
     }
 
     Item {
@@ -40,8 +58,10 @@ Item {
             width: root.width - x - root.leftPadding
 
             text: root.name
-            color: root.active ? Theme.foreground : Theme.resultMuted
+            textFormat: Text.PlainText
+            color: root.active ? Theme.resultForeground : Theme.resultMuted
             font.pixelSize: Theme.fontSize
+            font.weight: Font.DemiBold
             font.family: Theme.fontFamily !== "" ? Theme.fontFamily : font.family
             elide: Text.ElideRight
 

@@ -59,7 +59,7 @@ Singleton {
     // ------------------------------------------------------------- parsing
 
     function isColor(value: var): bool {
-        return typeof value === "string" && /^#[0-9a-fA-F]{3,8}$/.test(value);
+        return typeof value === "string" && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value);
     }
 
     // Walks a list of candidate lookups and returns the first that yields
@@ -204,11 +204,15 @@ Singleton {
     readonly property real mutedAlpha: 0.45
     readonly property color muted: Qt.alpha(root.foreground, root.mutedAlpha)
 
-    // Result rows sit over the wallpaper and also receive the lane's depth
-    // fade, so sharing the prompt's quiet 45% alpha makes lower rows too hard
-    // to read. Keep them subdued, but give them enough contrast to scan.
-    readonly property real resultMutedAlpha: 0.62
-    readonly property color resultMuted: Qt.alpha(root.foreground, root.resultMutedAlpha)
+    // Result rows have no panel behind them, so palette foregrounds can vanish
+    // over mixed wallpaper regions. Use the same maximum-contrast decision as
+    // typed input and let the outline, rather than low text opacity, identify
+    // the selection.
+    readonly property color resultForeground: root.queryForeground
+    readonly property real resultMutedAlpha: 0.9
+    readonly property color resultMuted: Qt.alpha(root.resultForeground, root.resultMutedAlpha)
+    readonly property color resultBackdrop:
+        root.resultForeground.hslLightness > 0.5 ? "#000000" : "#ffffff"
 
     // A provider may claim its own accent (CommandProvider does, once the ">"
     // prefix is active). Setting this to a transparent colour means "no

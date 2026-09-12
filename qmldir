@@ -10,3 +10,4 @@ SearchFrame 1.0 SearchFrame.qml
 ResultList 1.0 ResultList.qml
 ResultItem 1.0 ResultItem.qml
 SelectionOutline 1.0 SelectionOutline.qml
+ActivationController 1.0 ActivationController.qml

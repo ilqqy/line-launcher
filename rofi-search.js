@@ -227,31 +227,16 @@ function drunTokenMatch(tokens, app, options) {
 
     for (var t = 0; t < tokens.length; t++) {
         var token = tokens[t];
-        var test = 0;
+        // Negation applies to the union of fields, including every list item.
+        var positive = { regex: token.regex, invert: 0 };
+        var matched = (fields.name && helperTokenMatch(positive, app.name, options))
+            || (fields.generic && helperTokenMatch(positive, app.genericName, options))
+            || (fields.exec && helperTokenMatch(positive, app.exec, options))
+            || (fields.categories && matchTokenOnList(positive, app.categories || [], options))
+            || (fields.keywords && matchTokenOnList(positive, app.keywords || [], options))
+            || (fields.comment && helperTokenMatch(positive, app.comment, options));
 
-        if (fields.name && app.name)
-            test = helperTokenMatch(token, app.name, options) ? 1 : 0;
-
-        if (test === token.invert && fields.generic && app.genericName)
-            test = helperTokenMatch(token, app.genericName, options) ? 1 : 0;
-
-        if (test === token.invert && fields.exec && app.exec)
-            test = helperTokenMatch(token, app.exec, options) ? 1 : 0;
-
-        if (test === token.invert && fields.categories && app.categories && app.categories.length) {
-            if (matchTokenOnList(token, app.categories, options))
-                test = 1;
-        }
-
-        if (test === token.invert && fields.keywords && app.keywords && app.keywords.length) {
-            if (matchTokenOnList(token, app.keywords, options))
-                test = 1;
-        }
-
-        if (test === token.invert && fields.comment && app.comment)
-            test = helperTokenMatch(token, app.comment, options) ? 1 : 0;
-
-        if (test === 0)
+        if (token.invert ? matched : !matched)
             return false;
     }
 
@@ -288,6 +273,7 @@ function matchFieldRank(tokens, app, options) {
     var worst = 0;
 
     for (var t = 0; t < tokens.length; t++) {
+        if (tokens[t].invert) continue;
         var rank = tokenFieldRank(tokens[t], app, options);
         if (rank === 999)
             return 999;
@@ -532,6 +518,8 @@ function recordDrunLaunch(cacheText, desktopId, maxSize) {
 function historySortIndex(app, historyMap) {
     if (!historyMap)
         return null;
+    if (app && app.entry && app.entry.source && app.entry.source.usesDrunHistory === false)
+        return null;
 
     var id = desktopIdForApp(app);
     if (!id)
@@ -695,7 +683,13 @@ function search(query, applications, options) {
 
     for (var i = 0; i < appList.length; i++) {
         var app = appList[i];
-        if (!drunTokenMatch(tokens, app, searchOptions))
+        var literal = app.entry && app.entry.source && app.entry.source.literalMatching;
+        var matchOptions = literal ? {
+            matchingMethod: "normal", matchingNegateChar: "",
+            matchFields: { name: true }
+        } : searchOptions;
+        var matchTokens = literal ? createTokens(trimmed, matchOptions) : tokens;
+        if (!drunTokenMatch(matchTokens, app, matchOptions))
             continue;
 
         var sortText = completionName(app);
@@ -703,7 +697,7 @@ function search(query, applications, options) {
             app: app,
             entry: app.entry,
             index: i,
-            fieldRank: matchFieldRank(tokens, app, searchOptions),
+            fieldRank: matchFieldRank(matchTokens, app, matchOptions),
             distance: searchOptions.sort
                 ? sortDistance(trimmed, sortText, searchOptions)
                 : i
@@ -754,6 +748,9 @@ function search(query, applications, options) {
 
     results.sort(function(a, b) {
         var priorityDifference = providerPriority(a.entry) - providerPriority(b.entry);
+        if (priorityDifference === 0 && a.entry.source && a.entry.source === b.entry.source
+                && a.entry.source.preserveOrder)
+            return a.entry.order - b.entry.order;
         return priorityDifference !== 0 ? priorityDifference : a.rankIndex - b.rankIndex;
     });
 

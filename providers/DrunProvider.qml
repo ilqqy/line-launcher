@@ -27,8 +27,12 @@ Provider {
     readonly property var entries: {
         root.reloadCounter;
         const all = Array.from(root.applications.values);
-        return all.filter((entry, index, list) =>
-            !entry.noDisplay && index === list.findIndex(other => other.id === entry.id));
+        const seen = new Set();
+        return all.filter(entry => {
+            if (entry.noDisplay || seen.has(entry.id)) return false;
+            seen.add(entry.id);
+            return true;
+        });
     }
 
     // prepareApplication pulls out exactly the fields rofi's drun-match-fields

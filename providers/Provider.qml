@@ -54,6 +54,10 @@ QtObject {
     // application whose name is only a prefix match.
     property int resultPriority: 0
 
+    // Command text uses literal matching and keeps the provider's own order.
+    property bool literalMatching: false
+    property bool preserveOrder: false
+
     // Set false to drop out of ranking entirely -- dmenu mode switches the
     // application providers off this way.
     property bool available: true
@@ -133,6 +137,7 @@ QtObject {
                 "source": root,
                 "payload": fields.payload,
                 "confirm": fields.confirm === true,
+                "order": fields.order || 0,
                 "value": fields.value !== undefined ? fields.value : fields.name
             }
         };

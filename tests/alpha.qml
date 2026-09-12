@@ -18,8 +18,7 @@
 //   GAP     must be covered end to end, or the blur has holes in it
 //   FILL    a glyph-free patch of the gap, which must read frameFillOpacity
 //
-// The two grabs are the two states that matter: the frame open with a query
-// in it, and the frame shut, which is what is on screen before anyone types.
+// Capture both a query with results and the empty fixed-width input frame.
 import QtQuick
 import QtQuick.Window
 import Quickshell
@@ -86,11 +85,10 @@ ShellRoot {
                 anchors.top: frame.bottom
                 anchors.topMargin: Config.frameToListGap
 
-                results: frame.open ? suite.sampleResults : []
+                results: frame.text.length > 0 ? suite.sampleResults : []
                 currentIndex: 0
 
-                opacity: frame.drawnReveal
-                visible: opacity > 0.001
+                visible: count > 0
             }
         }
     }
@@ -117,20 +115,16 @@ ShellRoot {
             + Math.ceil(bottom + suite.margin));
     }
 
-    // The gap, and what the least-covered pixel in it has to read.
-    //
-    // The gap hugs the query, so there is no large glyph-free patch to sample
-    // any more -- the text fills it by construction. Asking for the *weakest*
-    // alpha in the whole region is the better question anyway: it proves the
-    // fill covers the gap end to end with no holes for the blur to fall
-    // through, and that where nothing else is drawn it reads exactly
-    // frameFillOpacity and not a fraction of it. Everything else in the gap --
-    // glyphs, halos -- can only add.
+    // The weakest alpha in the interior must still cover frameFillOpacity.
+    // Glyphs and halos may add coverage, but no pixel should leave a hole.
     function reportGap() {
-        const topLeft = frame.fillItem.mapToItem(surface, 0, 0);
+        // Rounded corners intentionally leave transparent pixels outside the
+        // silhouette; measure the rectangular interior they surround.
+        const inset = Math.ceil(frame.fillItem.radius);
+        const topLeft = frame.fillItem.mapToItem(surface, inset, inset);
         console.log("     ZONE open gap " + Math.round(topLeft.x) + " "
-            + Math.round(topLeft.y) + " " + Math.round(frame.fillItem.width)
-            + " " + Math.round(frame.fillItem.height) + " "
+            + Math.round(topLeft.y) + " " + Math.round(frame.fillItem.width - inset * 2)
+            + " " + Math.round(frame.fillItem.height - inset * 2) + " "
             + Config.frameFillOpacity);
     }
 
@@ -167,8 +161,8 @@ ShellRoot {
                 break;
 
             case 4:
-                suite.check("a query opens the frame", frame.open,
-                    "the field has text in it and the whiskers are still shut");
+                suite.check("the query keeps the fixed frame width", frame.gap === Config.frameWidth,
+                    "typing unexpectedly resized the frame");
                 suite.check("and brings the list with it", list.visible,
                     "the gap opened without the list");
                 suite.check("the fill is drawn", frame.fillItem.visible,
@@ -188,15 +182,13 @@ ShellRoot {
                 break;
 
             case 8:
-                suite.check("clearing the field shuts the frame", !frame.open,
-                    "an empty field left the whiskers apart");
+                suite.check("clearing the field preserves the frame", frame.gap === Config.frameWidth,
+                    "the empty input frame should stay visible");
                 suite.check("and takes the list away", !list.visible,
                     "the list outlived the gap");
-                suite.check("nothing is filled while it is shut",
-                    !frame.fillItem.visible,
-                    "there is no gap, so there is nothing to fill");
-                suite.check("so the gap is zero wide", frame.gap === 0,
-                    "gap " + frame.gap.toFixed(2) + "px with an empty field");
+                suite.check("the empty frame remains filled",
+                    frame.fillItem.visible,
+                    "the prompt lost its frame");
 
                 suite.reportBox("closed");
                 suite.grab("closed", function () {});

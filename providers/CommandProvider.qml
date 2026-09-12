@@ -20,6 +20,8 @@ Provider {
     // candidate in combined search. In > mode every result has this same
     // priority, so normal command-history ranking is unchanged.
     resultPriority: 10
+    literalMatching: true
+    preserveOrder: true
 
     // Its own history lives in history.json, so command launches stay out of
     // the shared drun cache.
@@ -80,10 +82,8 @@ Provider {
         const typed = text.trim();
         const out = [];
 
-        // The typed command comes first, unless history already holds it
-        // verbatim -- in which case the history entry is the same thing and a
-        // second row would just be a duplicate.
-        if (typed !== "" && root.history.indexOf(typed) < 0) {
+        // Always promote the exact command, including when it is in history.
+        if (typed !== "") {
             out.push(root.candidate({
                 "name": typed,
                 "id": "command:" + typed,
@@ -93,10 +93,12 @@ Provider {
 
         for (let i = 0; i < root.history.length; i++) {
             const entry = root.history[i];
+            if (entry === typed) continue;
             out.push(root.candidate({
                 "name": entry,
                 "id": "command:" + entry,
-                "payload": entry
+                "payload": entry,
+                "order": out.length
             }));
         }
 

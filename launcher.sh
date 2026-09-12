@@ -41,6 +41,7 @@ if [ -z "$qml_dir" ]; then
 fi
 
 items=
+items_set=
 prompt=
 config=
 namespace=
@@ -55,10 +56,12 @@ while [ $# -gt 0 ]; do
 	--items)
 		[ $# -ge 2 ] || { echo "line-launcher: --items needs a value" >&2; exit 2; }
 		items=$2
+		items_set=1
 		shift 2
 		;;
 	--items=*)
 		items=${1#*=}
+		items_set=1
 		shift
 		;;
 	--prompt)
@@ -100,21 +103,19 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
-# A compositor hotkey needs toggle semantics: invoking the same command a
-# second time closes this exact Quickshell configuration.  `qs kill` exits
-# non-zero when no matching instance exists, in which case we continue and
-# launch one below.
-if [ -n "$toggle" ] && qs kill --path "$qml_dir" >/dev/null 2>&1; then
-	exit 0
-fi
-
-if [ -n "$items" ]; then
+if [ -n "$items_set" ]; then
 	case $items in
 	'' | *[!0-9]*)
 		echo "line-launcher: --items expects a positive integer, got: $items" >&2
 		exit 2
 		;;
 	esac
+	# Strip leading zeroes without shell arithmetic (which treats them as octal).
+	items=${items#"${items%%[!0]*}"}
+	if [ -z "$items" ] || [ "${#items}" -gt 10 ] || { [ "${#items}" -eq 10 ] && [ "$items" -gt 2147483647 ]; }; then
+		echo "line-launcher: --items must be between 1 and 2147483647" >&2
+		exit 2
+	fi
 	export LINE_LAUNCHER_ITEMS=$items
 fi
 
@@ -133,6 +134,11 @@ if [ -n "$config" ]; then
 	fi
 	config_abs=$(CDPATH='' cd -- "$(dirname -- "$config")" && printf '%s/%s' "$PWD" "$(basename -- "$config")")
 	export LINE_LAUNCHER_CONFIG=$config_abs
+fi
+
+# Validate options before closing an existing instance.
+if [ -n "$toggle" ] && qs kill --path "$qml_dir" >/dev/null 2>&1; then
+	exit 0
 fi
 
 runtime_dir=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/line-launcher.XXXXXX")

@@ -115,13 +115,13 @@ ShellRoot {
     // currentIndex is authoritative. The lane's scroll position is derived
     // from it inside ResultList, never the reverse.
     property int currentIndex: 0
-    property bool confirming: false
+    readonly property bool confirming: activation.confirming
 
     onRawTextChanged: {
         // Changing the query always resets the selection; the outline travels
         // back to the top on the same spring.
         shell.currentIndex = 0;
-        shell.confirming = false;
+        activation.armedItem = null;
     }
 
     onRankedChanged: {
@@ -131,6 +131,7 @@ ShellRoot {
     }
 
     function move(delta: int) {
+        if (shell.closing !== shell.closeNone) return;
         const count = shell.ranked.length;
         if (count === 0) return;
         shell.currentIndex = Math.max(0, Math.min(count - 1, shell.currentIndex + delta));
@@ -176,35 +177,15 @@ ShellRoot {
 
     // ------------------------------------------------------------- activate
 
-    function activate() {
-        const item = shell.ranked[shell.currentIndex];
-        if (!item) {
-            shell.close(shell.closeFade);
-            return;
+    ActivationController {
+        id: activation
+        selectedItem: shell.ranked[shell.currentIndex] || null
+        onCancel: shell.close(shell.closeFade)
+        onLaunch: item => {
+            shell.recordLaunch(item);
+            item.source.activate(item.payload);
+            shell.close(shell.closeCollapse);
         }
-
-        if (item.confirm && !shell.confirming) {
-            // First Enter arms the action; the frame does not collapse.
-            shell.confirming = true;
-            return;
-        }
-
-        shell.recordLaunch(item);
-        item.source.activate(item.payload);
-        shell.close(shell.closeCollapse);
-    }
-
-    readonly property var modifierKeys: [
-        Qt.Key_Control, Qt.Key_Shift, Qt.Key_Alt, Qt.Key_Meta,
-        Qt.Key_AltGr, Qt.Key_CapsLock, Qt.Key_NumLock, Qt.Key_ScrollLock
-    ]
-
-    function onKeyActivity(key: int) {
-        if (!shell.confirming) return;
-        if (key === Qt.Key_Return || key === Qt.Key_Enter) return;
-        if (shell.modifierKeys.indexOf(key) >= 0) return;
-        // Any other key cancels and restores the normal state.
-        shell.confirming = false;
     }
 
     // -------------------------------------------------------- open handling
@@ -225,6 +206,8 @@ ShellRoot {
 
     function close(mode: int) {
         if (shell.closing !== shell.closeNone) return;
+        activation.closing = true;
+        activation.armedItem = null;
         shell.closing = mode;
         exitTimer.interval = mode === shell.closeCollapse ? 160 : 120;
         exitTimer.start();
@@ -374,11 +357,11 @@ ShellRoot {
                 collapsing: shell.closing === shell.closeCollapse
                 revealed: shell.entered
 
-                onAccepted: shell.activate()
+                onAccepted: activation.activate()
                 onCancelled: shell.close(shell.closeFade)
                 onMoveUp: shell.move(-1)
                 onMoveDown: shell.move(1)
-                onKeyActivity: key => shell.onKeyActivity(key)
+                onKeyActivity: (key, modifiers) => activation.keyActivity(key, modifiers)
             }
 
             ResultList {

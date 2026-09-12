@@ -73,6 +73,11 @@ ShellRoot {
     }
 
     function run() {
+        suite.check("reject a four-digit palette colour", Theme.isColor("#1234"), false);
+        suite.check("reject a five-digit palette colour", Theme.isColor("#12345"), false);
+        suite.check("reject a seven-digit palette colour", Theme.isColor("#1234567"), false);
+        suite.check("accept a short RGB colour", Theme.isColor("#abc"), true);
+        suite.check("accept an ARGB colour", Theme.isColor("#80123456"), true);
         let worst = 0;
         for (let i = 0; i < suite.referencePairs.length; i++) {
             const pair = suite.referencePairs[i];

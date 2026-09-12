@@ -119,6 +119,15 @@ ShellRoot {
             suite.check("a name hit outranks an exec hit",
                 suite.names(suite.search("f", suite.sampleApps)).split(",")[0], "Firefox");
 
+            suite.check("negation excludes any matching keyword",
+                suite.names(suite.search("-internet", suite.sampleApps)), "LACT,Steam,Volume Control");
+            suite.check("negation excludes an executable match even if the name differs",
+                suite.names(suite.search("-pavucontrol", suite.sampleApps)), "Firefox,LACT,Steam");
+            suite.check("negation works when only an absent field is enabled",
+                RofiSearch.search("-browser", [suite.app("Bare", "bare")], {
+                    matchFieldsSpec: "keywords"
+                }).length, 1);
+
             // --- history ordering -----------------------------------------
             const history = RofiSearch.parseDrunHistory("2 lact.desktop\n1 steam.desktop\n0 firefox.desktop\n");
             suite.check("history parses to rofi sort indices", history["lact.desktop"], 3);
@@ -196,6 +205,22 @@ ShellRoot {
             suite.check("a command with no application match is still first",
                 suite.names(suite.search("cliphist wipe",
                     suite.commands.candidates("cliphist wipe"))), "cliphist wipe");
+
+            suite.commands.history = ["ls -a", "ls -l", "echo z", "echo a"];
+            suite.check("command flags are literal rather than negated",
+                suite.names(suite.search("ls -l", suite.commands.candidates("ls -l"))), "ls -l");
+            suite.check("typed command precedes alphabetically earlier history",
+                suite.names(suite.search("z", suite.commands.candidates("z"))).split(",")[0], "z");
+            suite.check("command history retains recency after matching",
+                suite.names(suite.search("echo", suite.commands.candidates("echo"))), "echo,echo z,echo a");
+            suite.check("regex settings do not reinterpret shell syntax",
+                suite.names(RofiSearch.search("printf [", suite.commands.candidates("printf ["), {
+                    matchingMethod: "regex"
+                })), "printf [");
+            suite.check("commands ignore application match-field restrictions",
+                suite.names(RofiSearch.search("ls -l", suite.commands.candidates("ls -l"), {
+                    matchFieldsSpec: "exec"
+                })), "ls -l");
 
             // --- dmenu ------------------------------------------------------
             suite.dmenu.lines = [

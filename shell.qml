@@ -100,7 +100,7 @@ ShellRoot {
                 .map(record => record.entry);
         }
 
-        return RofiSearch.search(text, records, {
+        const options = {
             "matchingMethod": Config.matchingMethod,
             "normalizeMatch": Config.normalizeMatch,
             "sort": Config.sortMatches,
@@ -109,7 +109,10 @@ ShellRoot {
             "drunHistory": shell.drunHistory,
             "useDrunHistory": true,
             "preferNameMatch": Config.preferNameMatch
-        });
+        };
+        return active === null && !Config.dmenuMode
+            ? RofiSearch.searchWithKeyboardFallback(text, records, options)
+            : RofiSearch.search(text, records, options);
     }
 
     // currentIndex is authoritative. The lane's scroll position is derived

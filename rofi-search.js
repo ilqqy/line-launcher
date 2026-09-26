@@ -756,3 +756,61 @@ function search(query, applications, options) {
 
     return results.map(function(result) { return result.entry; });
 }
+
+// Convert the physical keys between English QWERTY and Russian ЙЦУКЕН.
+// Only a query with letters from one layout is eligible; mixed-language
+// searches should continue to mean exactly what was typed.
+function oppositeKeyboardLayout(query) {
+    var text = String(query || "");
+    var hasEnglish = /[a-z]/i.test(text);
+    var hasRussian = /[а-яё]/i.test(text);
+    if (hasEnglish === hasRussian)
+        return "";
+
+    var english = "`qwertyuiop[]asdfghjkl;'zxcvbnm,./";
+    var russian = "ёйцукенгшщзхъфывапролджэячсмитьбю.";
+    var from = hasRussian ? russian : english;
+    var to = hasRussian ? english : russian;
+    var converted = "";
+
+    for (var i = 0; i < text.length; i++) {
+        var ch = text.charAt(i);
+        var index = from.indexOf(ch.toLowerCase());
+        var mapped = index < 0 ? ch : to.charAt(index);
+        converted += ch !== ch.toLowerCase() ? mapped.toUpperCase() : mapped;
+    }
+
+    return converted === text ? "" : converted;
+}
+
+// Keep ordinary matches first within their provider. If the only direct
+// results are literal command candidates, try the other layout against apps
+// and actions, then place those suggestions above the raw command.
+function searchWithKeyboardFallback(query, applications, options) {
+    var direct = search(query, applications, options);
+    var hasDirectSuggestion = direct.some(function(entry) {
+        return !(entry.source && entry.source.literalMatching);
+    });
+    if (hasDirectSuggestion)
+        return direct;
+
+    var alternate = oppositeKeyboardLayout(query);
+    if (!alternate)
+        return direct;
+
+    var suggestions = applications.filter(function(app) {
+        return !(app.entry && app.entry.source && app.entry.source.literalMatching);
+    });
+    var recovered = search(alternate, suggestions, options);
+    if (recovered.length === 0)
+        return direct;
+
+    var combined = recovered.concat(direct).map(function(entry, index) {
+        return { entry: entry, index: index };
+    });
+    combined.sort(function(a, b) {
+        var priority = providerPriority(a.entry) - providerPriority(b.entry);
+        return priority !== 0 ? priority : a.index - b.index;
+    });
+    return combined.map(function(result) { return result.entry; });
+}

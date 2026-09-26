@@ -188,6 +188,11 @@ Start typing an application name. Desktop entries are matched using their
 name, generic name, executable, categories, and keywords. Entries marked
 `NoDisplay` are hidden, and duplicate desktop IDs are removed.
 
+If the query has no matching application or action, the launcher also tries
+the other English/Russian keyboard layout. For example, `вшысщкв` finds
+Discord while the text you typed stays in the input. This applies to ordinary
+application search; `>` command mode and piped menus use the exact input.
+
 Applications with `Terminal=true` are opened with `programs.line-launcher.terminal`
 or `$TERMINAL`. When neither is set, the application is run without a terminal
 and a warning is written to the launcher log.

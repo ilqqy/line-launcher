@@ -96,6 +96,14 @@ ShellRoot {
         return RofiSearch.search(text, records, options);
     }
 
+    function searchAuto(text, records, history) {
+        const options = {};
+        for (const key in suite.searchOptions) options[key] = suite.searchOptions[key];
+        options.drunHistory = history || {};
+        options.useDrunHistory = true;
+        return RofiSearch.searchWithKeyboardFallback(text, records, options);
+    }
+
     Timer {
         interval: 400
         running: true
@@ -202,6 +210,26 @@ ShellRoot {
                 suite.names(suite.search("disc", combinedCommands)), "Discord,disc");
             suite.check("the raw command remains available after the application",
                 suite.search("disc", combinedCommands)[1].source.providerId, "command");
+
+            // --- keyboard layout fallback in ordinary app search ----------
+            const mistypedDiscord = [discord].concat(suite.commands.candidates("вшысщкв"));
+            suite.check("Russian keys find Discord above the exact command",
+                suite.names(suite.searchAuto("вшысщкв", mistypedDiscord)),
+                "Discord,вшысщкв");
+            suite.check("uppercase Russian keys map to uppercase English",
+                RofiSearch.oppositeKeyboardLayout("ВШЫСЩКВ"), "DISCORD");
+            suite.check("English keys can find a Russian app",
+                suite.names(suite.searchAuto("ghbdtn", [suite.app("Привет", "hello")])),
+                "Привет");
+            suite.check("a direct match suppresses layout suggestions",
+                suite.names(suite.searchAuto("привет", [
+                    suite.app("Привет", "hello"), suite.app("Ghbdtn", "ghbdtn")
+                ])), "Привет");
+            suite.check("mixed-script queries stay literal",
+                RofiSearch.oppositeKeyboardLayout("вшысщквabc"), "");
+            suite.check("command-only search keeps its exact text",
+                suite.names(suite.search("вшысщкв", suite.commands.candidates("вшысщкв"))),
+                "вшысщкв");
             suite.check("a command with no application match is still first",
                 suite.names(suite.search("cliphist wipe",
                     suite.commands.candidates("cliphist wipe"))), "cliphist wipe");

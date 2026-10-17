@@ -1,0 +1,1925 @@
+{
+  "historyEntries": 25,
+  "commandHistoryEntries": 17,
+  "actions": 0,
+  "catalogCount": 73,
+  "catalog": [
+    {
+      "id": "Deadlock",
+      "name": "Deadlock",
+      "categories": [
+        "Game"
+      ]
+    },
+    {
+      "id": "Deadlock Mod Manager",
+      "name": "Deadlock Mod Manager",
+      "categories": []
+    },
+    {
+      "id": "Dota 2",
+      "name": "Dota 2",
+      "categories": [
+        "Game"
+      ]
+    },
+    {
+      "id": "Eclipse",
+      "name": "Eclipse IDE",
+      "categories": [
+        "Development"
+      ]
+    },
+    {
+      "id": "OpenTabletDriver",
+      "name": "OpenTabletDriver",
+      "categories": [
+        "Utility"
+      ]
+    },
+    {
+      "id": "Pathogenic",
+      "name": "Pathogenic",
+      "categories": [
+        "Game"
+      ]
+    },
+    {
+      "id": "Persona 5 Royal",
+      "name": "Persona 5 Royal",
+      "categories": [
+        "Game"
+      ]
+    },
+    {
+      "id": "Rhythia",
+      "name": "Rhythia",
+      "categories": [
+        "Game"
+      ]
+    },
+    {
+      "id": "Trails in the Sky 1st Chapter",
+      "name": "Trails in the Sky 1st Chapter",
+      "categories": [
+        "Game"
+      ]
+    },
+    {
+      "id": "Waydroid",
+      "name": "Waydroid",
+      "categories": [
+        "Utility",
+        "X-WayDroid-App"
+      ]
+    },
+    {
+      "id": "YACReader",
+      "name": "YACReader",
+      "categories": [
+        "Graphics",
+        "Viewer"
+      ]
+    },
+    {
+      "id": "YACReaderLibrary",
+      "name": "YACReader Library",
+      "categories": [
+        "Graphics",
+        "Viewer"
+      ]
+    },
+    {
+      "id": "amdgpu_top",
+      "name": "AMDGPU TOP (GUI)",
+      "categories": [
+        "Monitor",
+        "System"
+      ]
+    },
+    {
+      "id": "amdgpu_top-tui",
+      "name": "AMDGPU TOP (TUI)",
+      "categories": [
+        "Monitor",
+        "System"
+      ]
+    },
+    {
+      "id": "antigravity-ide",
+      "name": "Antigravity IDE",
+      "categories": [
+        "Development",
+        "IDE",
+        "TextEditor",
+        "Utility"
+      ]
+    },
+    {
+      "id": "bitwarden",
+      "name": "Bitwarden",
+      "categories": [
+        "Utility"
+      ]
+    },
+    {
+      "id": "blueman-adapters",
+      "name": "Bluetooth Adapters",
+      "categories": [
+        "GTK",
+        "HardwareSettings",
+        "Settings",
+        "X-XFCE",
+        "X-XFCE-SettingsDialog"
+      ]
+    },
+    {
+      "id": "blueman-manager",
+      "name": "Bluetooth Manager",
+      "categories": [
+        "GNOME",
+        "GTK",
+        "HardwareSettings",
+        "Settings"
+      ]
+    },
+    {
+      "id": "bottom",
+      "name": "bottom",
+      "categories": [
+        "ConsoleOnly",
+        "Monitor",
+        "System"
+      ]
+    },
+    {
+      "id": "brave-origin",
+      "name": "Brave Origin",
+      "categories": [
+        "Network",
+        "WebBrowser"
+      ]
+    },
+    {
+      "id": "btop",
+      "name": "btop++",
+      "categories": [
+        "ConsoleOnly",
+        "Monitor",
+        "System"
+      ]
+    },
+    {
+      "id": "chromium-browser",
+      "name": "Chromium",
+      "categories": [
+        "Network",
+        "WebBrowser"
+      ]
+    },
+    {
+      "id": "code",
+      "name": "Visual Studio Code",
+      "categories": [
+        "Development",
+        "IDE",
+        "TextEditor",
+        "Utility"
+      ]
+    },
+    {
+      "id": "com.ayugram.desktop",
+      "name": "AyuGram Desktop",
+      "categories": [
+        "Chat",
+        "InstantMessaging",
+        "Network",
+        "Qt"
+      ]
+    },
+    {
+      "id": "com.github.johnfactotum.Foliate",
+      "name": "Foliate",
+      "categories": [
+        "Office",
+        "Viewer"
+      ]
+    },
+    {
+      "id": "com.github.xournalpp.xournalpp",
+      "name": "Xournal++",
+      "categories": [
+        "GNOME",
+        "GTK",
+        "Office"
+      ]
+    },
+    {
+      "id": "com.moonlight_stream.Moonlight",
+      "name": "Moonlight",
+      "categories": [
+        "Game",
+        "Qt"
+      ]
+    },
+    {
+      "id": "com.obsproject.Studio",
+      "name": "OBS Studio",
+      "categories": [
+        "AudioVideo",
+        "Recorder"
+      ]
+    },
+    {
+      "id": "dev.lizardbyte.app.Sunshine",
+      "name": "Sunshine",
+      "categories": [
+        "Network",
+        "RemoteAccess"
+      ]
+    },
+    {
+      "id": "diri",
+      "name": "diri",
+      "categories": [
+        "Development"
+      ]
+    },
+    {
+      "id": "discord",
+      "name": "Discord",
+      "categories": [
+        "InstantMessaging",
+        "Network"
+      ]
+    },
+    {
+      "id": "firefox",
+      "name": "Firefox",
+      "categories": [
+        "Network",
+        "WebBrowser"
+      ]
+    },
+    {
+      "id": "gay.pancake.lsfg-vk-ui",
+      "name": "Configure lsfg-vk",
+      "categories": [
+        "Settings"
+      ]
+    },
+    {
+      "id": "gvim",
+      "name": "GVim",
+      "categories": [
+        "TextEditor",
+        "Utility"
+      ]
+    },
+    {
+      "id": "intellij-idea",
+      "name": "IntelliJ IDEA",
+      "categories": [
+        "Development"
+      ]
+    },
+    {
+      "id": "io.github.ilya_zlobintsev.LACT",
+      "name": "LACT",
+      "categories": [
+        "System"
+      ]
+    },
+    {
+      "id": "io.github.radiolamp.mangojuice",
+      "name": "MangoJuice",
+      "categories": [
+        "Application",
+        "Utility"
+      ]
+    },
+    {
+      "id": "io.gitlab.theevilskeleton.Upscaler",
+      "name": "Upscaler",
+      "categories": [
+        "GNOME",
+        "GTK",
+        "Graphics",
+        "ImageProcessing"
+      ]
+    },
+    {
+      "id": "kitty",
+      "name": "kitty",
+      "categories": [
+        "System",
+        "TerminalEmulator"
+      ]
+    },
+    {
+      "id": "md.obsidian.Obsidian",
+      "name": "Obsidian",
+      "categories": [
+        "Office"
+      ]
+    },
+    {
+      "id": "mpv",
+      "name": "mpv Media Player",
+      "categories": [
+        "Audio",
+        "AudioVideo",
+        "Player",
+        "TV",
+        "Video"
+      ]
+    },
+    {
+      "id": "net.nullsum.JelliumDesktop",
+      "name": "Jellium Desktop",
+      "categories": [
+        "AudioVideo",
+        "Player",
+        "TV",
+        "Video"
+      ]
+    },
+    {
+      "id": "nixos-manual",
+      "name": "NixOS Manual",
+      "categories": [
+        "System"
+      ]
+    },
+    {
+      "id": "nm-connection-editor",
+      "name": "Advanced Network Configuration",
+      "categories": [
+        "GNOME",
+        "GTK",
+        "Settings",
+        "X-GNOME-NetworkSettings",
+        "X-GNOME-Utilities"
+      ]
+    },
+    {
+      "id": "nvim",
+      "name": "Neovim wrapper",
+      "categories": [
+        "Development",
+        "TextEditor",
+        "Utility"
+      ]
+    },
+    {
+      "id": "nvim-hyprland",
+      "name": "Neovim (Hyprland)",
+      "categories": [
+        "TextEditor",
+        "Utility"
+      ]
+    },
+    {
+      "id": "org.gnome.Nautilus",
+      "name": "Files",
+      "categories": [
+        "Core",
+        "FileManager",
+        "GNOME",
+        "GTK",
+        "Utility"
+      ]
+    },
+    {
+      "id": "org.kde.ark",
+      "name": "Ark",
+      "categories": [
+        "Archiving",
+        "Compression",
+        "KDE",
+        "Qt",
+        "Utility",
+        "X-KDE-Utilities-File"
+      ]
+    },
+    {
+      "id": "org.kde.kate",
+      "name": "Kate",
+      "categories": [
+        "Development",
+        "KDE",
+        "Qt",
+        "TextEditor"
+      ]
+    },
+    {
+      "id": "org.kde.kwrite",
+      "name": "KWrite",
+      "categories": [
+        "KDE",
+        "Qt",
+        "TextEditor",
+        "Utility"
+      ]
+    },
+    {
+      "id": "org.prismlauncher.PrismLauncher",
+      "name": "Prism Launcher",
+      "categories": [
+        "ActionGame",
+        "AdventureGame",
+        "Game",
+        "PackageManager",
+        "Simulation"
+      ]
+    },
+    {
+      "id": "org.pulseaudio.pavucontrol",
+      "name": "Volume Control",
+      "categories": [
+        "Audio",
+        "AudioVideo",
+        "GTK",
+        "Mixer",
+        "Settings",
+        "X-XFCE-HardwareSettings",
+        "X-XFCE-SettingsDialog"
+      ]
+    },
+    {
+      "id": "org.qbittorrent.qBittorrent",
+      "name": "qBittorrent",
+      "categories": [
+        "FileTransfer",
+        "Network",
+        "P2P",
+        "Qt"
+      ]
+    },
+    {
+      "id": "org.rncbc.qpwgraph",
+      "name": "qpwgraph",
+      "categories": [
+        "Audio",
+        "AudioVideo",
+        "Midi",
+        "Qt",
+        "Video",
+        "X-Alsa",
+        "X-PipeWire"
+      ]
+    },
+    {
+      "id": "protontricks",
+      "name": "Protontricks",
+      "categories": [
+        "Utility"
+      ]
+    },
+    {
+      "id": "protonup-qt",
+      "name": "ProtonUp-Qt",
+      "categories": [
+        "Game",
+        "Utility"
+      ]
+    },
+    {
+      "id": "qt5ct",
+      "name": "Qt5 Settings",
+      "categories": [
+        "DesktopSettings",
+        "Qt",
+        "Settings"
+      ]
+    },
+    {
+      "id": "qt6ct",
+      "name": "Qt6 Settings",
+      "categories": [
+        "DesktopSettings",
+        "Qt",
+        "Settings"
+      ]
+    },
+    {
+      "id": "r2modman",
+      "name": "r2modman",
+      "categories": [
+        "Game"
+      ]
+    },
+    {
+      "id": "scrcpy",
+      "name": "scrcpy",
+      "categories": [
+        "RemoteAccess",
+        "Utility"
+      ]
+    },
+    {
+      "id": "scrcpy-console",
+      "name": "scrcpy (console)",
+      "categories": [
+        "RemoteAccess",
+        "Utility"
+      ]
+    },
+    {
+      "id": "sioyek",
+      "name": "Sioyek",
+      "categories": [
+        "Development",
+        "Viewer"
+      ]
+    },
+    {
+      "id": "spotify",
+      "name": "Spotify",
+      "categories": [
+        "Audio",
+        "AudioVideo",
+        "Music",
+        "Player"
+      ]
+    },
+    {
+      "id": "steam",
+      "name": "Steam",
+      "categories": [
+        "FileTransfer",
+        "Game",
+        "Network"
+      ]
+    },
+    {
+      "id": "vim",
+      "name": "Vim",
+      "categories": [
+        "TextEditor",
+        "Utility"
+      ]
+    },
+    {
+      "id": "wallpick",
+      "name": "Wallpick",
+      "categories": [
+        "Settings",
+        "Utility"
+      ]
+    },
+    {
+      "id": "wps-office-et",
+      "name": "WPS Spreadsheets",
+      "categories": [
+        "Office",
+        "Qt",
+        "Spreadsheet"
+      ]
+    },
+    {
+      "id": "wps-office-pdf",
+      "name": "WPS PDF",
+      "categories": [
+        "Office",
+        "Qt",
+        "WordProcessor"
+      ]
+    },
+    {
+      "id": "wps-office-prometheus",
+      "name": "WPS 2019",
+      "categories": [
+        "Office",
+        "Qt",
+        "WordProcessor"
+      ]
+    },
+    {
+      "id": "wps-office-wpp",
+      "name": "WPS Presentation",
+      "categories": [
+        "Office",
+        "Presentation",
+        "Qt"
+      ]
+    },
+    {
+      "id": "wps-office-wps",
+      "name": "WPS Writer",
+      "categories": [
+        "Office",
+        "Qt",
+        "WordProcessor"
+      ]
+    },
+    {
+      "id": "zen-beta",
+      "name": "Zen Browser (Beta)",
+      "categories": [
+        "Network",
+        "WebBrowser"
+      ]
+    },
+    {
+      "id": "zeron",
+      "name": "Zeron",
+      "categories": [
+        "Development",
+        "Utility"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "label": "empty (resting order = history only)",
+      "query": "",
+      "count": 23,
+      "enterLaunches": "zeron",
+      "ranked": [
+        {
+          "name": "Zeron",
+          "id": "zeron",
+          "provider": "drun"
+        },
+        {
+          "name": "Steam",
+          "id": "steam",
+          "provider": "drun"
+        },
+        {
+          "name": "AyuGram Desktop",
+          "id": "com.ayugram.desktop",
+          "provider": "drun"
+        },
+        {
+          "name": "Spotify",
+          "id": "spotify",
+          "provider": "drun"
+        },
+        {
+          "name": "Discord",
+          "id": "discord",
+          "provider": "drun"
+        },
+        {
+          "name": "diri",
+          "id": "diri",
+          "provider": "drun"
+        },
+        {
+          "name": "btop++",
+          "id": "btop",
+          "provider": "drun"
+        },
+        {
+          "name": "Deadlock Mod Manager",
+          "id": "Deadlock Mod Manager",
+          "provider": "drun"
+        },
+        {
+          "name": "Antigravity IDE",
+          "id": "antigravity-ide",
+          "provider": "drun"
+        },
+        {
+          "name": "Rhythia",
+          "id": "Rhythia",
+          "provider": "drun"
+        },
+        {
+          "name": "Eclipse IDE",
+          "id": "Eclipse",
+          "provider": "drun"
+        },
+        {
+          "name": "Deadlock",
+          "id": "Deadlock",
+          "provider": "drun"
+        },
+        {
+          "name": "Volume Control",
+          "id": "org.pulseaudio.pavucontrol",
+          "provider": "drun"
+        },
+        {
+          "name": "Brave Origin",
+          "id": "brave-origin",
+          "provider": "drun"
+        },
+        {
+          "name": "scrcpy",
+          "id": "scrcpy",
+          "provider": "drun"
+        },
+        {
+          "name": "Bitwarden",
+          "id": "bitwarden",
+          "provider": "drun"
+        },
+        {
+          "name": "Jellium Desktop",
+          "id": "net.nullsum.JelliumDesktop",
+          "provider": "drun"
+        },
+        {
+          "name": "Prism Launcher",
+          "id": "org.prismlauncher.PrismLauncher",
+          "provider": "drun"
+        },
+        {
+          "name": "Configure lsfg-vk",
+          "id": "gay.pancake.lsfg-vk-ui",
+          "provider": "drun"
+        },
+        {
+          "name": "LACT",
+          "id": "io.github.ilya_zlobintsev.LACT",
+          "provider": "drun"
+        },
+        {
+          "name": "Upscaler",
+          "id": "io.gitlab.theevilskeleton.Upscaler",
+          "provider": "drun"
+        },
+        {
+          "name": "OpenTabletDriver",
+          "id": "OpenTabletDriver",
+          "provider": "drun"
+        },
+        {
+          "name": "AMDGPU TOP (GUI)",
+          "id": "amdgpu_top",
+          "provider": "drun"
+        }
+      ]
+    },
+    {
+      "label": "exact name",
+      "query": "Steam",
+      "count": 9,
+      "enterLaunches": "steam",
+      "ranked": [
+        {
+          "name": "Steam",
+          "id": "steam",
+          "provider": "drun"
+        },
+        {
+          "name": "Protontricks",
+          "id": "protontricks",
+          "provider": "drun"
+        },
+        {
+          "name": "Rhythia",
+          "id": "Rhythia",
+          "provider": "drun"
+        },
+        {
+          "name": "Deadlock",
+          "id": "Deadlock",
+          "provider": "drun"
+        },
+        {
+          "name": "Dota 2",
+          "id": "Dota 2",
+          "provider": "drun"
+        },
+        {
+          "name": "Pathogenic",
+          "id": "Pathogenic",
+          "provider": "drun"
+        },
+        {
+          "name": "Persona 5 Royal",
+          "id": "Persona 5 Royal",
+          "provider": "drun"
+        },
+        {
+          "name": "Trails in the Sky 1st Chapter",
+          "id": "Trails in the Sky 1st Chapter",
+          "provider": "drun"
+        },
+        {
+          "name": "Steam",
+          "id": "command:Steam",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "exact name, lowercase",
+      "query": "discord",
+      "count": 2,
+      "enterLaunches": "discord",
+      "ranked": [
+        {
+          "name": "Discord",
+          "id": "discord",
+          "provider": "drun"
+        },
+        {
+          "name": "discord",
+          "id": "command:discord",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "exact name, uppercase",
+      "query": "STEAM",
+      "count": 9,
+      "enterLaunches": "steam",
+      "ranked": [
+        {
+          "name": "Steam",
+          "id": "steam",
+          "provider": "drun"
+        },
+        {
+          "name": "Protontricks",
+          "id": "protontricks",
+          "provider": "drun"
+        },
+        {
+          "name": "Rhythia",
+          "id": "Rhythia",
+          "provider": "drun"
+        },
+        {
+          "name": "Deadlock",
+          "id": "Deadlock",
+          "provider": "drun"
+        },
+        {
+          "name": "Dota 2",
+          "id": "Dota 2",
+          "provider": "drun"
+        },
+        {
+          "name": "Pathogenic",
+          "id": "Pathogenic",
+          "provider": "drun"
+        },
+        {
+          "name": "Persona 5 Royal",
+          "id": "Persona 5 Royal",
+          "provider": "drun"
+        },
+        {
+          "name": "Trails in the Sky 1st Chapter",
+          "id": "Trails in the Sky 1st Chapter",
+          "provider": "drun"
+        },
+        {
+          "name": "STEAM",
+          "id": "command:STEAM",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "prefix",
+      "query": "dis",
+      "count": 5,
+      "enterLaunches": "discord",
+      "ranked": [
+        {
+          "name": "Discord",
+          "id": "discord",
+          "provider": "drun"
+        },
+        {
+          "name": "scrcpy",
+          "id": "scrcpy",
+          "provider": "drun"
+        },
+        {
+          "name": "Files",
+          "id": "org.gnome.Nautilus",
+          "provider": "drun"
+        },
+        {
+          "name": "scrcpy (console)",
+          "id": "scrcpy-console",
+          "provider": "drun"
+        },
+        {
+          "name": "dis",
+          "id": "command:dis",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "single letter (many results)",
+      "query": "s",
+      "count": 62,
+      "enterLaunches": "steam",
+      "ranked": [
+        {
+          "name": "Steam",
+          "id": "steam",
+          "provider": "drun"
+        },
+        {
+          "name": "AyuGram Desktop",
+          "id": "com.ayugram.desktop",
+          "provider": "drun"
+        },
+        {
+          "name": "Spotify",
+          "id": "spotify",
+          "provider": "drun"
+        },
+        {
+          "name": "Discord",
+          "id": "discord",
+          "provider": "drun"
+        },
+        {
+          "name": "Eclipse IDE",
+          "id": "Eclipse",
+          "provider": "drun"
+        },
+        {
+          "name": "scrcpy",
+          "id": "scrcpy",
+          "provider": "drun"
+        },
+        {
+          "name": "Jellium Desktop",
+          "id": "net.nullsum.JelliumDesktop",
+          "provider": "drun"
+        },
+        {
+          "name": "Prism Launcher",
+          "id": "org.prismlauncher.PrismLauncher",
+          "provider": "drun"
+        },
+        {
+          "name": "Configure lsfg-vk",
+          "id": "gay.pancake.lsfg-vk-ui",
+          "provider": "drun"
+        },
+        {
+          "name": "Upscaler",
+          "id": "io.gitlab.theevilskeleton.Upscaler",
+          "provider": "drun"
+        },
+        {
+          "name": "Bluetooth Adapters",
+          "id": "blueman-adapters",
+          "provider": "drun"
+        },
+        {
+          "name": "Files",
+          "id": "org.gnome.Nautilus",
+          "provider": "drun"
+        },
+        {
+          "name": "NixOS Manual",
+          "id": "nixos-manual",
+          "provider": "drun"
+        },
+        {
+          "name": "OBS Studio",
+          "id": "com.obsproject.Studio",
+          "provider": "drun"
+        },
+        {
+          "name": "Obsidian",
+          "id": "md.obsidian.Obsidian",
+          "provider": "drun"
+        },
+        {
+          "name": "Persona 5 Royal",
+          "id": "Persona 5 Royal",
+          "provider": "drun"
+        },
+        {
+          "name": "Protontricks",
+          "id": "protontricks",
+          "provider": "drun"
+        },
+        {
+          "name": "Qt5 Settings",
+          "id": "qt5ct",
+          "provider": "drun"
+        },
+        {
+          "name": "Qt6 Settings",
+          "id": "qt6ct",
+          "provider": "drun"
+        },
+        {
+          "name": "scrcpy (console)",
+          "id": "scrcpy-console",
+          "provider": "drun"
+        },
+        {
+          "name": "Sioyek",
+          "id": "sioyek",
+          "provider": "drun"
+        },
+        {
+          "name": "Sunshine",
+          "id": "dev.lizardbyte.app.Sunshine",
+          "provider": "drun"
+        },
+        {
+          "name": "Trails in the Sky 1st Chapter",
+          "id": "Trails in the Sky 1st Chapter",
+          "provider": "drun"
+        },
+        {
+          "name": "Visual Studio Code",
+          "id": "code",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS 2019",
+          "id": "wps-office-prometheus",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS PDF",
+          "id": "wps-office-pdf",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS Presentation",
+          "id": "wps-office-wpp",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS Spreadsheets",
+          "id": "wps-office-et",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS Writer",
+          "id": "wps-office-wps",
+          "provider": "drun"
+        },
+        {
+          "name": "Zen Browser (Beta)",
+          "id": "zen-beta",
+          "provider": "drun"
+        },
+        {
+          "name": "btop++",
+          "id": "btop",
+          "provider": "drun"
+        },
+        {
+          "name": "Brave Origin",
+          "id": "brave-origin",
+          "provider": "drun"
+        },
+        {
+          "name": "bottom",
+          "id": "bottom",
+          "provider": "drun"
+        },
+        {
+          "name": "Chromium",
+          "id": "chromium-browser",
+          "provider": "drun"
+        },
+        {
+          "name": "Firefox",
+          "id": "firefox",
+          "provider": "drun"
+        },
+        {
+          "name": "IntelliJ IDEA",
+          "id": "intellij-idea",
+          "provider": "drun"
+        },
+        {
+          "name": "Antigravity IDE",
+          "id": "antigravity-ide",
+          "provider": "drun"
+        },
+        {
+          "name": "Volume Control",
+          "id": "org.pulseaudio.pavucontrol",
+          "provider": "drun"
+        },
+        {
+          "name": "Moonlight",
+          "id": "com.moonlight_stream.Moonlight",
+          "provider": "drun"
+        },
+        {
+          "name": "qpwgraph",
+          "id": "org.rncbc.qpwgraph",
+          "provider": "drun"
+        },
+        {
+          "name": "r2modman",
+          "id": "r2modman",
+          "provider": "drun"
+        },
+        {
+          "name": "YACReader Library",
+          "id": "YACReaderLibrary",
+          "provider": "drun"
+        },
+        {
+          "name": "LACT",
+          "id": "io.github.ilya_zlobintsev.LACT",
+          "provider": "drun"
+        },
+        {
+          "name": "AMDGPU TOP (GUI)",
+          "id": "amdgpu_top",
+          "provider": "drun"
+        },
+        {
+          "name": "Advanced Network Configuration",
+          "id": "nm-connection-editor",
+          "provider": "drun"
+        },
+        {
+          "name": "AMDGPU TOP (TUI)",
+          "id": "amdgpu_top-tui",
+          "provider": "drun"
+        },
+        {
+          "name": "Ark",
+          "id": "org.kde.ark",
+          "provider": "drun"
+        },
+        {
+          "name": "Bluetooth Manager",
+          "id": "blueman-manager",
+          "provider": "drun"
+        },
+        {
+          "name": "kitty",
+          "id": "kitty",
+          "provider": "drun"
+        },
+        {
+          "name": "qBittorrent",
+          "id": "org.qbittorrent.qBittorrent",
+          "provider": "drun"
+        },
+        {
+          "name": "Wallpick",
+          "id": "wallpick",
+          "provider": "drun"
+        },
+        {
+          "name": "YACReader",
+          "id": "YACReader",
+          "provider": "drun"
+        },
+        {
+          "name": "Rhythia",
+          "id": "Rhythia",
+          "provider": "drun"
+        },
+        {
+          "name": "Deadlock",
+          "id": "Deadlock",
+          "provider": "drun"
+        },
+        {
+          "name": "Dota 2",
+          "id": "Dota 2",
+          "provider": "drun"
+        },
+        {
+          "name": "mpv Media Player",
+          "id": "mpv",
+          "provider": "drun"
+        },
+        {
+          "name": "Pathogenic",
+          "id": "Pathogenic",
+          "provider": "drun"
+        },
+        {
+          "name": "s",
+          "id": "command:s",
+          "provider": "command"
+        },
+        {
+          "name": "dus",
+          "id": "command:dus",
+          "provider": "command"
+        },
+        {
+          "name": "systemctl suspend",
+          "id": "command:systemctl suspend",
+          "provider": "command"
+        },
+        {
+          "name": "ste'",
+          "id": "command:ste'",
+          "provider": "command"
+        },
+        {
+          "name": "dis",
+          "id": "command:dis",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "infix / fuzzy-ish substring",
+      "query": "fox",
+      "count": 2,
+      "enterLaunches": "firefox",
+      "ranked": [
+        {
+          "name": "Firefox",
+          "id": "firefox",
+          "provider": "drun"
+        },
+        {
+          "name": "fox",
+          "id": "command:fox",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "substring hitting name and exec",
+      "query": "code",
+      "count": 5,
+      "enterLaunches": "code",
+      "ranked": [
+        {
+          "name": "Visual Studio Code",
+          "id": "code",
+          "provider": "drun"
+        },
+        {
+          "name": "Zeron",
+          "id": "zeron",
+          "provider": "drun"
+        },
+        {
+          "name": "Antigravity IDE",
+          "id": "antigravity-ide",
+          "provider": "drun"
+        },
+        {
+          "name": "Kate",
+          "id": "org.kde.kate",
+          "provider": "drun"
+        },
+        {
+          "name": "code",
+          "id": "command:code",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "typo (no app match)",
+      "query": "spotfy",
+      "count": 1,
+      "enterLaunches": "command:spotfy",
+      "ranked": [
+        {
+          "name": "spotfy",
+          "id": "command:spotfy",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "typo (transposed)",
+      "query": "firefx",
+      "count": 1,
+      "enterLaunches": "command:firefx",
+      "ranked": [
+        {
+          "name": "firefx",
+          "id": "command:firefx",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "multi-word",
+      "query": "volume control",
+      "count": 2,
+      "enterLaunches": "org.pulseaudio.pavucontrol",
+      "ranked": [
+        {
+          "name": "Volume Control",
+          "id": "org.pulseaudio.pavucontrol",
+          "provider": "drun"
+        },
+        {
+          "name": "volume control",
+          "id": "command:volume control",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "multi-word, shared prefix family",
+      "query": "wps writer",
+      "count": 2,
+      "enterLaunches": "wps-office-wps",
+      "ranked": [
+        {
+          "name": "WPS Writer",
+          "id": "wps-office-wps",
+          "provider": "drun"
+        },
+        {
+          "name": "wps writer",
+          "id": "command:wps writer",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "shared prefix family, history tie-break",
+      "query": "wps",
+      "count": 6,
+      "enterLaunches": "wps-office-prometheus",
+      "ranked": [
+        {
+          "name": "WPS 2019",
+          "id": "wps-office-prometheus",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS PDF",
+          "id": "wps-office-pdf",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS Presentation",
+          "id": "wps-office-wpp",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS Spreadsheets",
+          "id": "wps-office-et",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS Writer",
+          "id": "wps-office-wps",
+          "provider": "drun"
+        },
+        {
+          "name": "wps",
+          "id": "command:wps",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "category-heavy: Game",
+      "query": "game",
+      "count": 14,
+      "enterLaunches": "protontricks",
+      "ranked": [
+        {
+          "name": "Protontricks",
+          "id": "protontricks",
+          "provider": "drun"
+        },
+        {
+          "name": "Prism Launcher",
+          "id": "org.prismlauncher.PrismLauncher",
+          "provider": "drun"
+        },
+        {
+          "name": "Moonlight",
+          "id": "com.moonlight_stream.Moonlight",
+          "provider": "drun"
+        },
+        {
+          "name": "Sunshine",
+          "id": "dev.lizardbyte.app.Sunshine",
+          "provider": "drun"
+        },
+        {
+          "name": "Steam",
+          "id": "steam",
+          "provider": "drun"
+        },
+        {
+          "name": "Rhythia",
+          "id": "Rhythia",
+          "provider": "drun"
+        },
+        {
+          "name": "Deadlock",
+          "id": "Deadlock",
+          "provider": "drun"
+        },
+        {
+          "name": "Dota 2",
+          "id": "Dota 2",
+          "provider": "drun"
+        },
+        {
+          "name": "Pathogenic",
+          "id": "Pathogenic",
+          "provider": "drun"
+        },
+        {
+          "name": "Persona 5 Royal",
+          "id": "Persona 5 Royal",
+          "provider": "drun"
+        },
+        {
+          "name": "ProtonUp-Qt",
+          "id": "protonup-qt",
+          "provider": "drun"
+        },
+        {
+          "name": "r2modman",
+          "id": "r2modman",
+          "provider": "drun"
+        },
+        {
+          "name": "Trails in the Sky 1st Chapter",
+          "id": "Trails in the Sky 1st Chapter",
+          "provider": "drun"
+        },
+        {
+          "name": "game",
+          "id": "command:game",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "category-heavy: Office",
+      "query": "office",
+      "count": 9,
+      "enterLaunches": "com.github.johnfactotum.Foliate",
+      "ranked": [
+        {
+          "name": "Foliate",
+          "id": "com.github.johnfactotum.Foliate",
+          "provider": "drun"
+        },
+        {
+          "name": "Obsidian",
+          "id": "md.obsidian.Obsidian",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS 2019",
+          "id": "wps-office-prometheus",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS PDF",
+          "id": "wps-office-pdf",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS Presentation",
+          "id": "wps-office-wpp",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS Spreadsheets",
+          "id": "wps-office-et",
+          "provider": "drun"
+        },
+        {
+          "name": "WPS Writer",
+          "id": "wps-office-wps",
+          "provider": "drun"
+        },
+        {
+          "name": "Xournal++",
+          "id": "com.github.xournalpp.xournalpp",
+          "provider": "drun"
+        },
+        {
+          "name": "office",
+          "id": "command:office",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "category-heavy: Utility",
+      "query": "utility",
+      "count": 20,
+      "enterLaunches": "zeron",
+      "ranked": [
+        {
+          "name": "Zeron",
+          "id": "zeron",
+          "provider": "drun"
+        },
+        {
+          "name": "Antigravity IDE",
+          "id": "antigravity-ide",
+          "provider": "drun"
+        },
+        {
+          "name": "scrcpy",
+          "id": "scrcpy",
+          "provider": "drun"
+        },
+        {
+          "name": "Bitwarden",
+          "id": "bitwarden",
+          "provider": "drun"
+        },
+        {
+          "name": "OpenTabletDriver",
+          "id": "OpenTabletDriver",
+          "provider": "drun"
+        },
+        {
+          "name": "Ark",
+          "id": "org.kde.ark",
+          "provider": "drun"
+        },
+        {
+          "name": "Files",
+          "id": "org.gnome.Nautilus",
+          "provider": "drun"
+        },
+        {
+          "name": "GVim",
+          "id": "gvim",
+          "provider": "drun"
+        },
+        {
+          "name": "KWrite",
+          "id": "org.kde.kwrite",
+          "provider": "drun"
+        },
+        {
+          "name": "MangoJuice",
+          "id": "io.github.radiolamp.mangojuice",
+          "provider": "drun"
+        },
+        {
+          "name": "Neovim (Hyprland)",
+          "id": "nvim-hyprland",
+          "provider": "drun"
+        },
+        {
+          "name": "Neovim wrapper",
+          "id": "nvim",
+          "provider": "drun"
+        },
+        {
+          "name": "Protontricks",
+          "id": "protontricks",
+          "provider": "drun"
+        },
+        {
+          "name": "ProtonUp-Qt",
+          "id": "protonup-qt",
+          "provider": "drun"
+        },
+        {
+          "name": "scrcpy (console)",
+          "id": "scrcpy-console",
+          "provider": "drun"
+        },
+        {
+          "name": "Vim",
+          "id": "vim",
+          "provider": "drun"
+        },
+        {
+          "name": "Visual Studio Code",
+          "id": "code",
+          "provider": "drun"
+        },
+        {
+          "name": "Wallpick",
+          "id": "wallpick",
+          "provider": "drun"
+        },
+        {
+          "name": "Waydroid",
+          "id": "Waydroid",
+          "provider": "drun"
+        },
+        {
+          "name": "utility",
+          "id": "command:utility",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "alias via category/generic: browser",
+      "query": "browser",
+      "count": 5,
+      "enterLaunches": "zen-beta",
+      "ranked": [
+        {
+          "name": "Zen Browser (Beta)",
+          "id": "zen-beta",
+          "provider": "drun"
+        },
+        {
+          "name": "Brave Origin",
+          "id": "brave-origin",
+          "provider": "drun"
+        },
+        {
+          "name": "Chromium",
+          "id": "chromium-browser",
+          "provider": "drun"
+        },
+        {
+          "name": "Firefox",
+          "id": "firefox",
+          "provider": "drun"
+        },
+        {
+          "name": "browser",
+          "id": "command:browser",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "alias via category: terminal",
+      "query": "terminal",
+      "count": 2,
+      "enterLaunches": "kitty",
+      "ranked": [
+        {
+          "name": "kitty",
+          "id": "kitty",
+          "provider": "drun"
+        },
+        {
+          "name": "terminal",
+          "id": "command:terminal",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "alias via exec only",
+      "query": "pavucontrol",
+      "count": 2,
+      "enterLaunches": "org.pulseaudio.pavucontrol",
+      "ranked": [
+        {
+          "name": "Volume Control",
+          "id": "org.pulseaudio.pavucontrol",
+          "provider": "drun"
+        },
+        {
+          "name": "pavucontrol",
+          "id": "command:pavucontrol",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "alias via keyboard layout (discord in RU)",
+      "query": "вшысщкв",
+      "count": 2,
+      "enterLaunches": "discord",
+      "ranked": [
+        {
+          "name": "Discord",
+          "id": "discord",
+          "provider": "drun"
+        },
+        {
+          "name": "вшысщкв",
+          "id": "command:вшысщкв",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "alias via keyboard layout (steam in RU)",
+      "query": "ыеуфь",
+      "count": 9,
+      "enterLaunches": "steam",
+      "ranked": [
+        {
+          "name": "Steam",
+          "id": "steam",
+          "provider": "drun"
+        },
+        {
+          "name": "Protontricks",
+          "id": "protontricks",
+          "provider": "drun"
+        },
+        {
+          "name": "Rhythia",
+          "id": "Rhythia",
+          "provider": "drun"
+        },
+        {
+          "name": "Deadlock",
+          "id": "Deadlock",
+          "provider": "drun"
+        },
+        {
+          "name": "Dota 2",
+          "id": "Dota 2",
+          "provider": "drun"
+        },
+        {
+          "name": "Pathogenic",
+          "id": "Pathogenic",
+          "provider": "drun"
+        },
+        {
+          "name": "Persona 5 Royal",
+          "id": "Persona 5 Royal",
+          "provider": "drun"
+        },
+        {
+          "name": "Trails in the Sky 1st Chapter",
+          "id": "Trails in the Sky 1st Chapter",
+          "provider": "drun"
+        },
+        {
+          "name": "ыеуфь",
+          "id": "command:ыеуфь",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "negation",
+      "query": "game -steam",
+      "count": 6,
+      "enterLaunches": "org.prismlauncher.PrismLauncher",
+      "ranked": [
+        {
+          "name": "Prism Launcher",
+          "id": "org.prismlauncher.PrismLauncher",
+          "provider": "drun"
+        },
+        {
+          "name": "Moonlight",
+          "id": "com.moonlight_stream.Moonlight",
+          "provider": "drun"
+        },
+        {
+          "name": "Sunshine",
+          "id": "dev.lizardbyte.app.Sunshine",
+          "provider": "drun"
+        },
+        {
+          "name": "ProtonUp-Qt",
+          "id": "protonup-qt",
+          "provider": "drun"
+        },
+        {
+          "name": "r2modman",
+          "id": "r2modman",
+          "provider": "drun"
+        },
+        {
+          "name": "game -steam",
+          "id": "command:game -steam",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "command prefix, empty (history as-is)",
+      "query": ">",
+      "count": 17,
+      "enterLaunches": "command:poweroff",
+      "ranked": [
+        {
+          "name": "poweroff",
+          "id": "command:poweroff",
+          "provider": "command"
+        },
+        {
+          "name": "reboot",
+          "id": "command:reboot",
+          "provider": "command"
+        },
+        {
+          "name": "powerpff",
+          "id": "command:powerpff",
+          "provider": "command"
+        },
+        {
+          "name": "dus",
+          "id": "command:dus",
+          "provider": "command"
+        },
+        {
+          "name": "zert",
+          "id": "command:zert",
+          "provider": "command"
+        },
+        {
+          "name": "ыну",
+          "id": "command:ыну",
+          "provider": "command"
+        },
+        {
+          "name": "systemctl suspend",
+          "id": "command:systemctl suspend",
+          "provider": "command"
+        },
+        {
+          "name": "zeri",
+          "id": "command:zeri",
+          "provider": "command"
+        },
+        {
+          "name": "фнг",
+          "id": "command:фнг",
+          "provider": "command"
+        },
+        {
+          "name": "aui",
+          "id": "command:aui",
+          "provider": "command"
+        },
+        {
+          "name": "ызщешан",
+          "id": "command:ызщешан",
+          "provider": "command"
+        },
+        {
+          "name": "ste'",
+          "id": "command:ste'",
+          "provider": "command"
+        },
+        {
+          "name": "vol\\",
+          "id": "command:vol\\",
+          "provider": "command"
+        },
+        {
+          "name": "мщд",
+          "id": "command:мщд",
+          "provider": "command"
+        },
+        {
+          "name": "ызщ",
+          "id": "command:ызщ",
+          "provider": "command"
+        },
+        {
+          "name": "rofi",
+          "id": "command:rofi",
+          "provider": "command"
+        },
+        {
+          "name": "dis",
+          "id": "command:dis",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "command prefix with text",
+      "query": "> sys",
+      "count": 2,
+      "enterLaunches": "command:sys",
+      "ranked": [
+        {
+          "name": "sys",
+          "id": "command:sys",
+          "provider": "command"
+        },
+        {
+          "name": "systemctl suspend",
+          "id": "command:systemctl suspend",
+          "provider": "command"
+        }
+      ]
+    },
+    {
+      "label": "no match at all",
+      "query": "zzqx",
+      "count": 1,
+      "enterLaunches": "command:zzqx",
+      "ranked": [
+        {
+          "name": "zzqx",
+          "id": "command:zzqx",
+          "provider": "command"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"accentKey":"auto","actions":[],"auraOpacity":0.35,"auraRadius":20,"colors":{"danger":"#d75f5f"},"font":"JetBrainsMono Nerd Font","frameFillOpacity":0.42,"frameHeight":44,"frameWidth":260,"glowEnabled":true,"glowOpacity":0.55,"glowRadius":8,"hookLength":16,"listPerspective":0,"maxCharacters":60,"terminal":"kitty -e","topMargin":36,"visibleItems":5,"whiskerLength":120}

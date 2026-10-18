@@ -52,6 +52,13 @@ Item {
     readonly property var chips: Launchpad.chipsFor(root.applications)
     property string category: Launchpad.allKey
     readonly property bool filtering: root.gridMode && root.category !== Launchpad.allKey
+
+    // The same test, computed on the spot. Handlers that run as `category`
+    // or `gridMode` change cannot read `filtering`: its binding may not have
+    // re-evaluated yet when they fire.
+    function isFiltering(): bool {
+        return root.gridMode && root.category !== Launchpad.allKey;
+    }
     readonly property var activeChip: {
         for (let i = 0; i < root.chips.length; i++) {
             if (root.chips[i].key === root.category) return root.chips[i];
@@ -62,7 +69,7 @@ Item {
     // ------------------------------------------------------- what is shown
 
     function computeShown(): var {
-        if (!root.filtering) return root.results;
+        if (!root.isFiltering()) return root.results;
         const key = root.category;
         return root.results.filter(entry => Launchpad.entryIn(entry, key));
     }
@@ -80,7 +87,7 @@ Item {
         if (root.closing) return;
         const list = root.computeShown();
         if (viewIndex < 0 || viewIndex >= list.length) return;
-        root.selectRequested(root.filtering ? root.results.indexOf(list[viewIndex]) : viewIndex);
+        root.selectRequested(root.isFiltering() ? root.results.indexOf(list[viewIndex]) : viewIndex);
     }
 
     // Unfiltered, the first result is the shell's own resting choice (0, even
@@ -89,7 +96,7 @@ Item {
     // an empty list.
     function selectFirst() {
         if (root.closing) return;
-        if (!root.filtering) {
+        if (!root.isFiltering()) {
             root.selectRequested(0);
             return;
         }
@@ -104,7 +111,7 @@ Item {
     property bool reselectPending: false
 
     onResultsChanged: {
-        if (!root.filtering) return;
+        if (!root.isFiltering()) return;
         root.reselectPending = true;
         Qt.callLater(root.flushReselect);
     }

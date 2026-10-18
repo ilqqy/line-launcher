@@ -37,6 +37,14 @@ Item {
         }
 
         delegate: AppTile {
+            // cacheBuffer builds rows below the fold ahead of a scroll. Their
+            // icons wait until the row is on screen: the image loader serves
+            // the newest request first, so they would otherwise load ahead of
+            // the icons that are actually visible.
+            iconActive: {
+                const top = Math.floor(index / Theme.gridColumns) * Theme.cellHeight;
+                return top < grid.contentY + grid.height && top + Theme.cellHeight > grid.contentY;
+            }
             selectedIndex: root.selectedIndex
             confirming: root.confirming
             onHovered: (index, scenePos) => root.tileHovered(index, scenePos)

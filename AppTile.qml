@@ -12,6 +12,7 @@ Item {
 
     property int selectedIndex: -1
     property bool confirming: false
+    property bool iconActive: true
 
     readonly property bool selected: root.index === root.selectedIndex
     // An action waiting for its second Enter.
@@ -32,6 +33,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         y: Theme.iconTop
         size: Theme.iconSize
+        active: root.iconActive
         name: Launchpad.iconFor(root.modelData, Theme.commandIcon)
         label: root.modelData ? root.modelData.name : ""
 

@@ -18,22 +18,28 @@ Provider {
     Connections {
         target: DesktopEntries
         function onApplicationsChanged() {
-            root.reloadCounter += 1;
+            root.reload();
         }
     }
 
-    property int reloadCounter: 0
+    // Assigned, not bound. A scan fills the model one insert at a time and
+    // signals applicationsChanged once at the end; a binding on
+    // `applications.values` re-ran this filter, `prepared`, the chips and
+    // the ranking on every insert -- 73 times at startup, blocking the event
+    // loop for ~130ms before the window could map.
+    property var entries: []
 
-    readonly property var entries: {
-        root.reloadCounter;
+    function reload() {
         const all = Array.from(root.applications.values);
         const seen = new Set();
-        return all.filter(entry => {
+        root.entries = all.filter(entry => {
             if (entry.noDisplay || seen.has(entry.id)) return false;
             seen.add(entry.id);
             return true;
         });
     }
+
+    Component.onCompleted: root.reload()
 
     // prepareApplication pulls out exactly the fields rofi's drun-match-fields
     // covers: name, generic, exec, categories, keywords, comment.

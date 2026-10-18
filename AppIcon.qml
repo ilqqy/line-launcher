@@ -13,17 +13,27 @@ Item {
     // Its first letter labels the drawn fallback.
     property string label: ""
     property real size: Theme.iconSize
+    // False holds the theme lookup back; the slot shows the plain soft tile
+    // until it turns true. Once requested, an icon stays loaded.
+    property bool active: true
+
+    property bool latched: false
+    readonly property bool requested: root.active || root.latched
+    onActiveChanged: if (root.active) root.latched = true
+    // A reused delegate gets a new name: it waits for `active` again.
+    onNameChanged: root.latched = root.active
 
     implicitWidth: root.size
     implicitHeight: root.size
 
     readonly property string source: {
+        if (!root.requested) return "";
         if (root.name.startsWith("/")) return "file://" + root.name;
         if (root.name === "") return Quickshell.iconPath(Theme.fallbackIcon, true);
         return Quickshell.iconPath(root.name, Theme.fallbackIcon);
     }
 
-    readonly property bool missing: root.source === "" || image.status === Image.Error
+    readonly property bool missing: root.requested && (root.source === "" || image.status === Image.Error)
 
     // Fade in only icons that actually had to load. One already in the pixmap
     // cache is ready on creation and must not flicker every time a keystroke
@@ -53,7 +63,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: root.size * 0.06
-        opacity: root.missing || image.status === Image.Loading ? 1 : 0
+        opacity: root.missing || !root.requested || image.status === Image.Loading ? 1 : 0
         visible: opacity > 0.01
         radius: width * 0.23
         color: Theme.fallbackIconFill

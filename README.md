@@ -127,7 +127,8 @@ from `gtk-icon-theme-name` in `$XDG_CONFIG_HOME/gtk-3.0/settings.ini`, unless
 For each result the launcher asks for the entry's icon name or absolute path,
 falls back to the theme's `application-x-executable`, and, when neither
 resolves, draws a rounded tile with the entry's first letter. A placeholder
-tile holds the slot while an icon is loading.
+tile holds the slot while an icon is loading, and grid rows below the fold
+look their icons up only once they scroll into view.
 
 ## Hyprland setup
 
@@ -471,9 +472,12 @@ against that.
   cannot fade in with the panel. It switches on, at full strength, once the
   fading panel's alpha crosses the threshold, early in the open animation.
 - The shadow must stay below `ignore_alpha`, so it is lighter than macOS's.
-- A cold start can take up to about 0.7 s to load all icons when the hicolor
-  icon theme has no `icon-theme.cache`; icons fade in over placeholders
-  meanwhile. On NixOS, `gtk.iconCache.enable = true` may help (untested).
+- Icon lookups are slow when the icon theme, or a theme it inherits (hicolor,
+  breeze-dark for Papirus), has no `icon-theme.cache`: about 16 ms per icon,
+  so the first screen of icons fades in over placeholders for roughly 0.3 s
+  after the panel appears. NixOS builds no caches unless
+  `gtk.iconCache.enable = true` (its default follows
+  `services.xserver.enable`); with it, the same icons load in about 80 ms.
 - `--toggle` closes instantly, without the close animation.
 - The panel size is fixed by `Theme.qml`; there are no layout options in
   `config.json`.

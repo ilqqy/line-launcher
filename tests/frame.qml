@@ -1,4 +1,4 @@
-// Headless assertions for Config, Theme and SearchFrame.
+// Headless assertions for Config, Theme and the SearchField keymap.
 //
 // Run through tests/run.sh, which stages the repo root plus this file into a
 // temp directory so that `qs -p` can resolve the shell types.
@@ -37,13 +37,19 @@ ShellRoot {
         width: 1920
         height: 1080
 
-        SearchFrame {
+        SearchField {
             id: frame
             width: host.width
             height: implicitHeight
 
             onMoveUp: suite.record("up")
             onMoveDown: suite.record("down")
+            onMoveLeft: suite.record("left")
+            onMoveRight: suite.record("right")
+            onPageUp: suite.record("pageup")
+            onPageDown: suite.record("pagedown")
+            onNextCategory: suite.record("next")
+            onPreviousCategory: suite.record("previous")
             onAccepted: suite.record("accepted")
             onCancelled: suite.record("cancelled")
         }
@@ -75,12 +81,11 @@ ShellRoot {
                 Theme.resultForeground.hslLightness > 0.5 ? "0" : "1");
             suite.check("activeAccent tracks accent", Theme.activeAccent, Theme.accent);
 
-            // --- centred input --------------------------------------------
-            frame.inputItem.text = "ste";
-            suite.check("typed text is centred", frame.inputItem.horizontalAlignment,
-                TextInput.AlignHCenter);
-
             // --- the keymap -----------------------------------------------
+            // Without category chips (dmenu, ">" commands) Tab keeps moving
+            // the selection, and arrows are left to the text field.
+            frame.tabCyclesCategories = false;
+            frame.arrowsNavigate = false;
             suite.check("Tab moves down", suite.pressed(Qt.Key_Tab, Qt.NoModifier), "down");
             suite.check("Shift+Tab moves up",
                 suite.pressed(Qt.Key_Tab, Qt.ShiftModifier), "up");
@@ -95,6 +100,28 @@ ShellRoot {
             // A plain letter is consumed by neither.
             suite.check("a plain letter is left to the field",
                 frame.handleKey(Qt.Key_A, Qt.NoModifier), false);
+            suite.check("Left is left to the field without a grid",
+                frame.handleKey(Qt.Key_Left, Qt.NoModifier), false);
+            suite.check("PageDown pages", suite.pressed(Qt.Key_PageDown, Qt.NoModifier), "pagedown");
+            suite.check("PageUp pages", suite.pressed(Qt.Key_PageUp, Qt.NoModifier), "pageup");
+
+            // With chips and a non-empty grid, Tab walks the categories and
+            // plain Left/Right walk the grid; Shift/Ctrl+arrows still edit.
+            frame.tabCyclesCategories = true;
+            frame.arrowsNavigate = true;
+            suite.check("Tab cycles categories", suite.pressed(Qt.Key_Tab, Qt.NoModifier), "next");
+            suite.check("Shift+Tab cycles back",
+                suite.pressed(Qt.Key_Tab, Qt.ShiftModifier), "previous");
+            suite.check("Backtab cycles back",
+                suite.pressed(Qt.Key_Backtab, Qt.ShiftModifier), "previous");
+            suite.check("Left moves in the grid", suite.pressed(Qt.Key_Left, Qt.NoModifier), "left");
+            suite.check("Right moves in the grid", suite.pressed(Qt.Key_Right, Qt.NoModifier), "right");
+            suite.check("Shift+Left is left to the field",
+                frame.handleKey(Qt.Key_Left, Qt.ShiftModifier), false);
+            suite.check("Ctrl+Right is left to the field",
+                frame.handleKey(Qt.Key_Right, Qt.ControlModifier), false);
+            suite.check("Down still moves down in the grid",
+                suite.pressed(Qt.Key_Down, Qt.NoModifier), "down");
 
             // --- pixel snapping -------------------------------------------
             Config.devicePixelRatio = 2;

@@ -285,10 +285,9 @@ ShellRoot {
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
         WlrLayershell.namespace: Config.namespace
 
-        // Anchoring all four sides gives a full-screen surface. The visible
-        // content is a few hundred pixels wide in the middle of it, so the
-        // whiskers have the whole half-screen to slide into on close, and
-        // nothing needs clipping.
+        // Anchoring all four sides gives a full-screen surface: the panel
+        // sits in the middle of it, the open/close scale never clips, and a
+        // click anywhere outside the panel lands here and dismisses it.
         exclusionMode: ExclusionMode.Ignore
         anchors {
             top: true
@@ -321,65 +320,106 @@ ShellRoot {
             }
         }
 
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            onClicked: shell.close(shell.closeFade)
+        }
+
+        // Open is a fade and a small scale-up; close is the same run
+        // backwards, quick enough to finish before the shell's exit timer.
         Item {
-            id: content
+            id: stage
 
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: Config.topMargin
-            width: parent.width
-            height: frame.implicitHeight + Config.frameToListGap + list.implicitHeight
+            // The first frames that draw the panel are the expensive ones:
+            // effect shaders compile and layers render for the first time. At
+            // opacity 0 the scene graph skips the panel entirely, so that cost
+            // would land mid-fade and the eased curve would skip ahead. The
+            // panel is drawn at an invisible 1% for a few frames first, and
+            // the fade starts once they are behind it. 1% of the fill is far
+            // below the blur's ignore_alpha, so nothing shows meanwhile.
+            property bool primed: false
+            property int primeFrames: 0
 
-            clip: false
-            readonly property bool open: shell.closing === shell.closeNone && shell.entered
-
-            opacity: content.open ? 1 : 0
-
-            Behavior on opacity {
-                NumberAnimation {
-                    // Esc fades a little faster than the Enter collapse so the
-                    // two do not read as the same gesture. The fade in runs on
-                    // the whiskers' own clock so the frame finishes arriving
-                    // and finishes appearing together.
-                    duration: shell.closing === shell.closeNone
-                        ? 90
-                        : (shell.closing === shell.closeCollapse ? 160 : 110)
-                    easing.type: shell.closing === shell.closeNone
-                        ? Easing.OutQuad
-                        : Easing.InQuad
+            FrameAnimation {
+                running: shell.entered && !stage.primed
+                onTriggered: {
+                    stage.primeFrames += 1;
+                    if (stage.primeFrames >= 3) stage.primed = true;
                 }
             }
 
-            SearchFrame {
-                id: frame
+            width: frame.implicitWidth
+            height: frame.implicitHeight
+            x: Math.round((parent.width - width) / 2)
+            y: Math.round((parent.height - height) * Theme.panelVerticalBias)
 
-                width: parent.width
-                height: implicitHeight
-                anchors.top: parent.top
+            // Closed is the base state; priming is an instant 1% within it.
+            opacity: shell.entered && !stage.primed ? 0.01 : 0
+            scale: Theme.closedScale
 
-                collapsing: shell.closing === shell.closeCollapse
-                revealed: shell.entered
-
-                onAccepted: activation.activate()
-                onCancelled: shell.close(shell.closeFade)
-                onMoveUp: shell.move(-1)
-                onMoveDown: shell.move(1)
-                onKeyActivity: (key, modifiers) => activation.keyActivity(key, modifiers)
+            // A state with a transition each way, rather than Behaviors, so
+            // each direction always gets its own curve: a Behavior reads its
+            // easing before a binding on `open` has updated it. Interrupting
+            // either direction runs the other from wherever it had reached.
+            states: State {
+                name: "open"
+                when: shell.closing === shell.closeNone && shell.entered && stage.primed
+                PropertyChanges {
+                    stage.opacity: 1
+                    stage.scale: 1
+                }
             }
 
-            ResultList {
-                id: list
+            transitions: [
+                Transition {
+                    to: "open"
+                    NumberAnimation {
+                        properties: "opacity,scale"
+                        duration: Theme.openDuration
+                        easing.type: Easing.OutCubic
+                    }
+                },
+                Transition {
+                    from: "open"
+                    NumberAnimation {
+                        properties: "opacity,scale"
+                        duration: Theme.closeDuration
+                        easing.type: Easing.InCubic
+                    }
+                }
+            ]
 
-                width: parent.width
-                height: implicitHeight
-                anchors.top: frame.bottom
-                anchors.topMargin: Config.frameToListGap
+            LauncherPanel {
+                id: frame
+
+                anchors.fill: parent
 
                 results: shell.ranked
                 currentIndex: shell.currentIndex
                 confirming: shell.confirming
-                collapsing: shell.closing === shell.closeCollapse
-                accent: Theme.activeAccent
+                closing: shell.closing !== shell.closeNone
+
+                applications: {
+                    for (let i = 0; i < shell.providers.length; i++) {
+                        const provider = shell.providers[i];
+                        if (provider.providerId === "drun")
+                            return provider.available ? provider.prepared : [];
+                    }
+                    return [];
+                }
+
+                gridMode: !Config.dmenuMode && shell.activeProvider === null
+                showRowIcons: !Config.dmenuMode
+                listTitle: Config.dmenuMode ? (Config.prompt || qsTr("Items")) : qsTr("Commands")
+                placeholder: Config.prompt !== "" ? Config.prompt : qsTr("Search")
+
+                onSelectRequested: index => {
+                    if (shell.closing === shell.closeNone) shell.currentIndex = index;
+                }
+                onAccepted: activation.activate()
+                onCancelled: shell.close(shell.closeFade)
+                onKeyActivity: (key, modifiers) => activation.keyActivity(key, modifiers)
             }
         }
     }

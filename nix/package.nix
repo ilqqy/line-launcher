@@ -48,9 +48,26 @@ in
 
     runtimeInputs = [quickshell];
 
+    # Qt only picks an icon theme up from qt6ct/KDE settings; without one it
+    # resolves against hicolor alone, which has no generic fallback icons.
+    # Follow the GTK icon theme unless QS_ICON_THEME is already set.
     text =
       ''
         export LINE_LAUNCHER_QML_DIR="${qmlSource}/share/line-launcher"
+
+        if [ -z "''${QS_ICON_THEME:-}" ]; then
+        	gtk_settings=''${XDG_CONFIG_HOME:-$HOME/.config}/gtk-3.0/settings.ini
+        	if [ -r "$gtk_settings" ]; then
+        		while IFS='=' read -r key value; do
+        			key=''${key//[[:space:]]/}
+        			[ "$key" = gtk-icon-theme-name ] || continue
+        			value=''${value#"''${value%%[![:space:]]*}"}
+        			value=''${value%"''${value##*[![:space:]]}"}
+        			if [ -n "$value" ]; then export QS_ICON_THEME=$value; fi
+        			break
+        		done <"$gtk_settings"
+        	fi
+        fi
       ''
       + launcherBody;
 

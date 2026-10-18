@@ -1,77 +1,59 @@
 # line-launcher
 
-`line-launcher` is a text-first Wayland launcher for Hyprland, built with
-[Quickshell](https://quickshell.org). It appears at the top centre of the
-focused monitor as a translucent, compositor-blurred frame with horizontal
-lines on both sides.
-
-It can launch desktop applications, run arbitrary shell commands, expose
-custom actions such as power off and reboot, and replace `rofi -dmenu` in
-pipelines such as `cliphist`.
+An application launcher for Hyprland, written in [Quickshell](https://quickshell.org),
+styled after macOS: a Spotlight-style search field over a Launchpad-style
+icon grid, in one centred translucent panel blurred by the compositor. It
+replaces rofi for applications, shell commands, custom actions and
+`rofi -dmenu` pipelines such as `cliphist`.
 
 ## Contents
 
-- [Quick start](#quick-start)
+- [Features](#features)
 - [Installation](#installation)
 - [Hyprland setup](#hyprland-setup)
 - [Using the launcher](#using-the-launcher)
-- [Keyboard controls](#keyboard-controls)
-- [Complete configuration](#complete-home-managernixos-configuration)
-- [JSON configuration](#json-configuration-without-a-module)
-- [Colours and visual effects](#colours-and-visual-effects)
+- [Keyboard and mouse](#keyboard-and-mouse)
+- [Configuration](#configuration)
 - [Command-line reference](#command-line-reference)
-- [Troubleshooting](#troubleshooting)
+- [Theming](#theming)
+- [Files and state](#files-and-state)
 - [Development and tests](#development-and-tests)
+- [Known limitations](#known-limitations)
+- [Troubleshooting](#troubleshooting)
 
 ## Features
 
-- One ranked list for applications, custom actions, and shell commands.
-- A real hotkey toggle: press Win once to open and press it again to close.
-- Rofi-compatible application matching, ranking, and launch history.
-- Normal, glob, fuzzy, regex, and prefix matching methods.
-- Shell-command history with an optional command-only `>` prefix.
-- Applications and actions rank above raw command candidates in combined search.
-- Dmenu-compatible piped input, including `cliphist` tab-column handling.
-- Confirm-before-running support for dangerous actions.
-- Live pywal, wallust, matugen, or Stylix colours.
-- Automatic selection of a readable palette accent.
-- Hyprland blur limited to the translucent centre frame.
-- Adjustable frame size, position, result count, glow, aura, and perspective.
-- Focused-monitor placement and HiDPI pixel snapping.
-- Text-only results: no icons are loaded or rendered.
-- Centred, bright typed text with no ghost autocomplete.
-- Separate opening, launch, and cancellation animations.
+- Search ported from rofi 2.x: token matching over name, generic name,
+  executable, categories and keywords; normal, glob, fuzzy, regex and prefix
+  matching methods; `-` negation; rofi's ranking and launch history
+  (`rofi3.druncache` format, shareable with rofi).
+- One ranked list for applications, custom actions and shell commands;
+  applications and actions rank above command candidates.
+- English/Russian keyboard-layout fallback: `вшысщкв` finds Discord.
+- Category chips derived from `.desktop` `Categories=`, "All" first.
+- A 5-column icon grid with edge fades and a gliding selection highlight.
+- Shell-command mode (`>` prefix) and dmenu mode (piped stdin, e.g. the
+  clipboard picker), both shown as Spotlight-style rows.
+- Confirm-before-running for dangerous actions.
+- Open: fade and scale-up (0.96 to 1, 150 ms ease-out). Close: the reverse
+  (110 ms ease-in).
+- Light or dark following the active pywal, wallust or matugen palette, with
+  an automatically chosen readable accent; palette changes apply live.
+- System icon theme with a generic fallback icon and a drawn letter tile when
+  nothing resolves.
+- Opens on Hyprland's focused monitor.
 
-## Quick start
+## Installation
 
-Run it without installing:
+### Flake
+
+Run without installing:
 
 ```sh
 nix run github:ilqqy/line-launcher
 ```
 
-Open a shell containing the launcher:
-
-```sh
-nix shell github:ilqqy/line-launcher
-line-launcher
-```
-
-For a compositor shortcut, use `--toggle`, not the plain command:
-
-```sh
-line-launcher --toggle
-```
-
-The first call opens it. Calling the same command again closes the existing
-Quickshell instance. Normal launcher invocations also use Quickshell's
-single-instance protection, so overlays cannot accidentally stack.
-
-## Installation
-
-### Home Manager
-
-Add the input to your flake:
+Add it as an input:
 
 ```nix
 {
@@ -82,7 +64,13 @@ Add the input to your flake:
 }
 ```
 
-Import the module in your Home Manager configuration:
+Outputs: `packages.<system>.default` (also `.line-launcher`),
+`apps.<system>.default`, `homeManagerModules.default` (also
+`.line-launcher`), `nixosModules.default` (also `.line-launcher`),
+`devShells.<system>.default`, `formatter`. Systems: `x86_64-linux`,
+`aarch64-linux`.
+
+### Home Manager
 
 ```nix
 {inputs, ...}: {
@@ -90,472 +78,338 @@ Import the module in your Home Manager configuration:
 
   programs.line-launcher = {
     enable = true;
-    font = "JetBrainsMono Nerd Font";
+    font = "Inter";
     terminal = "kitty -e";
   };
 }
 ```
 
-The module installs the package and writes
-`$XDG_CONFIG_HOME/line-launcher/config.json`.
+Installs the package and writes `$XDG_CONFIG_HOME/line-launcher/config.json`.
 
-### NixOS module
-
-The NixOS module has the same options and writes
-`/etc/xdg/line-launcher/config.json`:
+### NixOS
 
 ```nix
-{inputs, ...}: {
+{inputs, pkgs, ...}: {
   imports = [inputs.line-launcher.nixosModules.default];
 
   programs.line-launcher = {
     enable = true;
+    font = "Inter";
     terminal = "kitty -e";
   };
+
+  # The module does not install fonts.
+  fonts.packages = [pkgs.inter];
 }
 ```
 
-If both modules are used, the per-user configuration overrides the system
-configuration key by key.
+Same options; writes `/etc/xdg/line-launcher/config.json`. If both modules are
+used, the per-user file overrides the system one key by key.
 
-### Local checkout
+### Fonts
 
-For development or testing local changes:
+The panel uses Inter, and Inter Display (Inter's large optical size, shipped
+in the same `inter` package) for the search field. `programs.line-launcher.font`
+sets the family; when it is null, `"Inter"` is requested anyway. Inter Display
+is used only while the family is `Inter`; any other family is used for the
+field as well. Install the font yourself, for example with `pkgs.inter` in
+`fonts.packages`. Without it, fontconfig substitutes another face.
 
-```sh
-git clone https://github.com/ilqqy/line-launcher
-cd line-launcher
-nix develop
-qs -p .
-```
+### Icon theme
 
-The wrapper can also run directly when `qs` is already on `PATH`:
+Icons come from the system icon theme. Qt only reads an icon theme from
+qt6ct/KDE settings, and without one it resolves against hicolor alone, which
+has no generic icons. The packaged wrapper therefore exports `QS_ICON_THEME`
+from `gtk-icon-theme-name` in `$XDG_CONFIG_HOME/gtk-3.0/settings.ini`, unless
+`QS_ICON_THEME` is already set. When running from a checkout (no wrapper), set
+`QS_ICON_THEME` yourself.
 
-```sh
-./launcher.sh --toggle
-```
+For each result the launcher asks for the entry's icon name or absolute path,
+falls back to the theme's `application-x-executable`, and, when neither
+resolves, draws a rounded tile with the entry's first letter. A placeholder
+tile holds the slot while an icon is loading.
 
 ## Hyprland setup
 
-### Hyprland 0.55+ Lua configuration
-
-This binds the left Win key by itself. The same key opens and closes the
-launcher:
+Hyprland 0.55+ Lua configuration:
 
 ```lua
 hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd("line-launcher --toggle"))
+hl.bind("SUPER + V", hl.dsp.exec_cmd(
+  "cliphist list | line-launcher | cliphist decode | wl-copy"
+))
 
 hl.layer_rule({
   match = { namespace = "line-launcher" },
   blur = true,
   ignore_alpha = 0.15,
+  no_anim = true,
 })
 ```
 
-If a helper already adds `SUPER +`, use only `SUPER_L` when calling it:
+- `blur` blurs what is behind the panel.
+- `ignore_alpha = 0.15` is required. The launcher is a transparent
+  full-screen layer surface; blur applies only where its alpha exceeds 0.15,
+  which is the panel (fill alpha 0.60 dark, 0.72 light) and not the shadow
+  (kept at 0.14 or less) or the empty screen.
+- `no_anim` disables Hyprland's layer animation; the launcher animates its own
+  open and close, and the two would otherwise play on top of each other.
 
-```lua
-local function bind(keys, dispatcher, flags)
-  hl.bind("SUPER + " .. keys, dispatcher, flags)
-end
-
-bind("SUPER_L", hl.dsp.exec_cmd("line-launcher --toggle"))
-```
-
-Do not add a second Win binding that separately kills Quickshell. Opening and
-closing must both go through `line-launcher --toggle`; two independent close
-handlers can race and reopen the launcher.
-
-`ignore_alpha` matters because the launcher owns a transparent full-screen
-layer surface. It confines blur to the translucent frame instead of blurring
-the entire monitor.
-
-If Hyprland cannot find Home Manager packages in its `PATH`, use a stable
-profile path:
+Use one binding for opening and closing, and make it `--toggle`. Do not add a
+second binding that kills Quickshell separately. If Hyprland cannot find the
+Home Manager package on its `PATH`, call it by profile path:
 
 ```lua
 local launcher = os.getenv("HOME")
   .. "/.local/state/nix/profiles/home-manager/home-path/bin/line-launcher"
-
 hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd(launcher .. " --toggle"))
 ```
 
+A custom namespace (`--namespace NAME`) needs the same rule with that name.
+
 ## Using the launcher
 
-### Applications
+### Layout
 
-Start typing an application name. Desktop entries are matched using their
-name, generic name, executable, categories, and keywords. Entries marked
-`NoDisplay` are hidden, and duplicate desktop IDs are removed.
+A 640x511 panel, centred horizontally, slightly above the vertical centre of
+the focused monitor:
 
-If the query has no matching application or action, the launcher also tries
-the other English/Russian keyboard layout. For example, `вшысщкв` finds
-Discord while the text you typed stays in the input. This applies to ordinary
-application search; `>` command mode and piped menus use the exact input.
+1. Search field: magnifier, query, clear button (shown while there is text).
+2. Category chips.
+3. Results: a 5-column grid (about 3.4 rows visible, scrolling) for
+   applications, actions and commands found by ordinary search; rows for
+   dmenu lines and `>` command mode.
 
-Applications with `Terminal=true` are opened with `programs.line-launcher.terminal`
-or `$TERMINAL`. When neither is set, the application is run without a terminal
-and a warning is written to the launcher log.
+The surface covers the whole monitor, so a click anywhere outside the panel
+reaches the launcher and closes it.
 
-With an empty query, only previously launched applications and actions are
-shown, ordered by frecency. On a new installation the empty launcher therefore
-shows only the input frame until something has been launched.
+### Search
+
+Type to search. Results are shown in exactly the order the search engine
+returns them. Desktop entries marked `NoDisplay` are hidden and duplicate
+desktop IDs are removed.
+
+With an empty query only applications and actions that have been launched
+before are shown, most frecent first. On a fresh history the panel shows
+"Start Typing to Search".
+
+If the query matches no application or action, the other keyboard layout
+(English/Russian) is tried; the text you typed stays in the field.
+
+Applications with `Terminal=true` run in `terminal` (or `$TERMINAL`); with
+neither set they run without a terminal and a warning is logged.
+
+### Categories
+
+Chips are built from the freedesktop main categories present among the
+installed applications: Development, Education, Games (`Game`), Graphics,
+Internet (`Network`), Media (`AudioVideo`, `Audio`, `Video`), Office,
+Science, Settings, System, Utilities (`Utility`). A chip exists only if at
+least one application has that category. Additional categories
+(`WebBrowser`, `TextEditor`, `GTK`, `X-...`) are not chips.
+
+A chip only hides results; it never reorders them. Actions and commands have
+no categories and appear under "All" only. Because the empty query lists only
+recently used applications, a chip with an empty query filters those: it
+shows "No Recent Apps in X" until you type. A chip with no matching results
+shows "No Results"; Enter then closes the launcher, as on an empty list.
 
 ### Shell commands
 
-Shell commands participate in ordinary search alongside applications and
-actions, but matching applications/actions are presented first. Type a command
-such as:
-
-```text
-cliphist wipe
-```
-
-The exact typed command appears as a result. Press Enter to execute it through
+Commands take part in ordinary search: the typed text is offered as a
+command (terminal icon), after any matching applications and actions,
+together with matching command-history entries. Enter runs it through
 `sh -c`.
 
-Begin the query with `>` to search commands only:
+Start the query with `>` to search commands only. The results become rows
+under a "Commands" header: the typed command first, then history, most recent
+first. Commands are matched literally (flags and punctuation are not
+interpreted).
 
-```text
->systemctl --user restart waybar
-```
+History: `$XDG_STATE_HOME/line-launcher/history.json`, most recent first,
+duplicates moved to the top, capped at 200 entries.
 
-Executed commands are saved most-recent-first in
-`$XDG_STATE_HOME/line-launcher/history.json`. Duplicate commands are moved to
-the top, and history is capped at 200 entries.
+Commands run with your user's authority, like a terminal.
 
-Command matching treats shell flags and punctuation literally, even when an
-application matching mode such as regex is configured. The exact typed command
-comes before matching command-history entries, which retain their recency order.
-
-Commands have the same authority as commands entered in a terminal. Review a
-command before pressing Enter, especially if it modifies or deletes files.
-
-### Custom actions and power controls
-
-Actions appear in the same search results as applications. This example adds
-lock, suspend, reboot, power-off, and logout controls:
+### Actions
 
 ```nix
 programs.line-launcher.actions = [
-  {
-    name = "Lock";
-    exec = "hyprlock";
-  }
-  {
-    name = "Suspend";
-    exec = "systemctl suspend";
-  }
-  {
-    name = "Reboot";
-    exec = "systemctl reboot";
-    confirm = true;
-  }
-  {
-    name = "Power off";
-    exec = "systemctl poweroff";
-    confirm = true;
-  }
-  {
-    name = "Log out";
-    exec = "hyprctl dispatch exit";
-    confirm = true;
-  }
+  { name = "Lock"; exec = "hyprlock"; }
+  { name = "Suspend"; exec = "systemctl suspend"; }
+  { name = "Reboot"; exec = "systemctl reboot"; confirm = true; }
+  { name = "Power off"; exec = "systemctl poweroff"; icon = "system-shutdown"; confirm = true; }
 ];
 ```
 
-Actions are matched by both `name` and `exec`, so `poweroff` finds the
-`Power off` action.
+Actions are matched by `name` and `exec` (`poweroff` finds "Power off") and
+are ranked with applications. `icon` (theme name or absolute path) is shown
+in the grid; without it the generic executable icon is used. `terminal = true`
+runs the command in the configured terminal.
 
-When `confirm = true`, the first Enter arms the action: the selection changes
-to the danger colour and `confirm` appears on the right. A second Enter runs
-the action. Holding Enter does not confirm; it needs a second press. `Ctrl+m`
-also confirms. Other non-modifier keys and a changed selection cancel confirmation.
+With `confirm = true` the first Enter arms the action: the highlight turns
+the danger colour and the label reads "Press Enter to confirm". A second
+Enter (or `Ctrl+m`) runs it. Holding Enter does not confirm; any other
+non-modifier key or a change of selection disarms it.
 
-Set `terminal = true` on an action to run it inside the configured terminal.
-The legacy `icon` action field is accepted for compatibility but ignored,
-because this launcher intentionally renders no icons.
+### Clipboard and dmenu mode
 
-### Dmenu and cliphist
-
-Piping stdin into `line-launcher` switches it into dmenu mode. Application,
-action, and command providers are disabled for that invocation. The selected
-original line is printed to stdout:
+Piping into `line-launcher` lists the piped lines instead of applications,
+prints the chosen line to stdout and exits 0; Esc prints nothing and exits 1:
 
 ```sh
-printf 'first\nsecond\nthird\n' | line-launcher
-```
-
-Escape prints nothing and exits with status 1. Selecting an item exits with
-status 0.
-
-For clipboard history:
-
-```sh
+printf 'first\nsecond\n' | line-launcher
 cliphist list | line-launcher | cliphist decode | wl-copy
 ```
 
-Suggested Hyprland binding:
+Lines are shown as rows under an "Items" header (or the `--prompt` text),
+without icons and without category chips. A line containing tabs shows its
+second column but returns the whole line, as rofi's `-display-columns 2` does
+for `cliphist`. Displayed lines are cut at `maxCharacters`.
 
-```lua
-hl.bind("SUPER + V", hl.dsp.exec_cmd(
-  "cliphist list | line-launcher | cliphist decode | wl-copy"
-))
-```
+## Keyboard and mouse
 
-When a piped line contains tabs, the second tab-separated column is displayed
-but the complete original line is returned. This matches the behavior needed
-for `cliphist` and Rofi's `-display-columns 2`. Displayed lines are truncated
-according to `maxCharacters`.
-
-## Keyboard controls
-
-| Key | Action |
+| Input | Action |
 | --- | --- |
-| `Win` | open or close when the compositor binding uses `--toggle` |
-| `Up`, `Ctrl+p`, `Shift+Tab` | select the previous result |
-| `Down`, `Ctrl+n`, `Tab` | select the next result |
-| `Enter`, `Ctrl+m` | launch the selected result |
-| `Enter` twice | run an action with `confirm = true` |
-| `Esc` | close without launching |
+| typing | search |
+| `Up` / `Down`, `Ctrl+p` / `Ctrl+n` | grid: previous / next row (rows: previous / next row). Up on the top row stays; Down into a shorter last row lands on its last cell |
+| `Left` / `Right` | grid: previous / next cell in reading order (while the grid has results; otherwise the caret moves) |
+| `Shift` or `Ctrl` + arrows | edit the text as in any field |
+| `PageUp` / `PageDown` | grid: 3 rows; rows: 8 |
+| `Tab` / `Shift+Tab` | next / previous category chip, wrapping. In dmenu and `>` mode (no chips): next / previous result |
+| `Enter`, `Ctrl+m` | launch the selection (twice for `confirm = true` actions) |
+| `Esc` | close |
+| pointer motion over a tile or row | select it |
+| click a tile or row | launch it |
+| click a chip | switch category |
+| click the clear button | clear the query |
+| mouse wheel | scroll the results |
+| click outside the panel | close |
 
-Typed text is centred in the frame. There is deliberately no inline or ghost
-autocomplete; the highlighted row is the only completion suggestion.
-Unselected results remain slightly dimmer than the selection, but use an
-adaptive maximum-contrast foreground and a tight opposite-colour shadow so
-lower rows stay readable over mixed wallpapers without adding a result panel.
+Hover selects only when the pointer actually moves, so a pointer resting
+where the panel opens does not take the selection from the keyboard.
 
-## Complete Home Manager/NixOS configuration
+Closing animates (fade and scale-down) after Esc, a launch, or a click
+outside. Closing through `line-launcher --toggle` is instant: the wrapper
+ends the running instance with `qs kill`.
 
-Every module option is shown below. All options have defaults, so only set the
-ones you want to change.
+## Configuration
 
-```nix
-programs.line-launcher = {
-  enable = true;
+### Module options
 
-  # Normally supplied automatically by the imported module.
-  # package = inputs.line-launcher.packages.${pkgs.system}.default;
+`programs.line-launcher.*` (Home Manager and NixOS):
 
-  font = "JetBrainsMono Nerd Font"; # null uses the system default
-  terminal = "kitty -e";            # null falls back to $TERMINAL
-
-  # null auto-detects pywal, wallust, or matugen.
-  colorsFile = null;
-  colorsFormat = null;               # null | "pywal" | "wallust" | "matugen"
-  accentKey = "auto";                # auto, color1 ... color6, or another key
-
-  colors = {
-    foreground = "#c5c8c6";
-    background = "#1d1f21";
-    accent = "#5f87d7";
-    danger = "#d75f5f";
-  };
-
-  stylix.enable = false;
-
-  glowEnabled = true;
-  glowRadius = 8;
-  glowOpacity = 0.55;
-  auraRadius = 20;
-  auraOpacity = 0.35;
-
-  frameWidth = 260;
-  frameHeight = 44;
-  frameFillOpacity = 0.42;
-  topMargin = 36;
-  whiskerLength = 120;
-  visibleItems = 5;
-  listPerspective = 0;               # 0 = flat, 1 = full receding fan
-  maxCharacters = 60;
-
-  actions = [];
-};
-```
-
-### Module option reference
-
-| Option | Default | Purpose |
+| Option | Default | Effect |
 | --- | --- | --- |
-| `enable` | `false` | install and configure the launcher |
-| `package` | flake package | launcher package to install |
-| `font` | `null` | input and result font family |
-| `terminal` | `null` | terminal command for terminal applications/actions |
-| `colorsFile` | `null` | explicit palette JSON path; disables auto-detection |
-| `colorsFormat` | `null` | `pywal`, `wallust`, or `matugen`; inferred when null |
-| `accentKey` | `"auto"` | palette accent key or automatic contrast selection |
-| `colors.foreground` | `null` | static text and stroke colour |
-| `colors.background` | `null` | static frame and legibility-glow colour |
-| `colors.accent` | `null` | static query and selection colour |
-| `colors.danger` | `"#d75f5f"` | confirmation-state colour |
-| `stylix.enable` | `false` | use Stylix base05, base00, and base0D fallbacks |
-| `glowEnabled` | `true` | construct both contrast effects |
-| `glowRadius` | `8` | legibility-halo radius at the default font size |
-| `glowOpacity` | `0.55` | legibility-halo opacity |
-| `auraRadius` | `20` | selection/query accent-aura radius |
-| `auraOpacity` | `0.35` | accent-aura opacity |
-| `frameWidth` | `260` | centre-frame width in pixels |
-| `frameHeight` | `44` | centre-frame height in pixels |
-| `frameFillOpacity` | `0.42` | translucent frame fill opacity |
-| `topMargin` | `36` | distance from the monitor's top edge |
-| `whiskerLength` | `120` | length of each side line |
-| `hookLength` | `16` | deprecated compatibility option; currently unused |
-| `visibleItems` | `5` | visible result rows before scrolling |
-| `listPerspective` | `0` | result-lane projection from flat (`0`) to full (`1`) |
-| `maxCharacters` | `60` | maximum displayed dmenu-line length |
-| `actions` | `[]` | custom searchable actions |
+| `enable` | `false` | install and write `config.json` |
+| `package` | flake package | package to install |
+| `font` | `null` | font family; null requests Inter |
+| `terminal` | `null` | terminal command for `Terminal=true` entries and `terminal = true` actions; null uses `$TERMINAL` |
+| `colorsFile` | `null` | palette JSON path; null probes pywal, wallust, matugen (see [Theming](#theming)) |
+| `colorsFormat` | `null` | `pywal`, `wallust` or `matugen`; inferred when null |
+| `accentKey` | `"auto"` | palette key for the accent, or `auto` |
+| `colors.foreground` | `null` | static fallback; reference colour for the `auto` accent choice |
+| `colors.background` | `null` | static fallback; tints the panel and decides light or dark |
+| `colors.accent` | `null` | static fallback accent |
+| `colors.danger` | `"#d75f5f"` | confirm-state colour |
+| `stylix.enable` | `false` | take the colour fallbacks from Stylix base05, base00, base0D |
+| `maxCharacters` | `60` | display cut for dmenu lines |
+| `actions` | `[]` | custom actions (`name`, `exec`, `icon`, `confirm`, `terminal`) |
 
-Each action supports:
+Still accepted, written to `config.json`, but with no effect on the current
+interface: `glowEnabled`, `glowRadius`, `glowOpacity`, `auraRadius`,
+`auraOpacity`, `frameWidth`, `frameHeight`, `frameFillOpacity`, `topMargin`,
+`whiskerLength`, `hookLength`, `visibleItems`, `listPerspective`. The panel's
+size and look are set in [`Theme.qml`](#theming).
 
-| Field | Default | Purpose |
+### config.json
+
+Without a module, create `$XDG_CONFIG_HOME/line-launcher/config.json` with
+the same keys (`colors` is an object, `actions` a list). Precedence, lowest
+first:
+
+1. built-in defaults (`Config.qml`),
+2. `/etc/xdg/line-launcher/config.json`,
+3. `$XDG_CONFIG_HOME/line-launcher/config.json`, or the `--config` file,
+4. command-line flags.
+
+Configuration and palette files are watched; edits apply to a running
+launcher.
+
+JSON-only keys (no module option):
+
+| Key | Default | Effect |
 | --- | --- | --- |
-| `name` | required | displayed and searchable action name |
-| `exec` | required | command executed through `sh -c` |
-| `confirm` | `false` | require a second Enter |
-| `terminal` | `false` | run inside the configured terminal |
-| `icon` | `null` | deprecated and ignored |
-
-## JSON configuration without a module
-
-Create `$XDG_CONFIG_HOME/line-launcher/config.json` (normally
-`~/.config/line-launcher/config.json`):
-
-```json
-{
-  "font": "JetBrainsMono Nerd Font",
-  "fontSize": 14,
-  "terminal": "kitty -e",
-  "frameWidth": 260,
-  "frameHeight": 44,
-  "frameFillOpacity": 0.42,
-  "topMargin": 36,
-  "whiskerLength": 120,
-  "visibleItems": 5,
-  "listPerspective": 0,
-  "maxCharacters": 60,
-  "glowEnabled": true,
-  "glowRadius": 8,
-  "glowOpacity": 0.55,
-  "auraRadius": 20,
-  "auraOpacity": 0.35,
-  "accentKey": "auto",
-  "colors": {
-    "foreground": "#c5c8c6",
-    "background": "#1d1f21",
-    "accent": "#5f87d7",
-    "danger": "#d75f5f"
-  },
-  "actions": []
-}
-```
-
-Configuration precedence, from lowest to highest, is:
-
-1. Built-in defaults.
-2. `/etc/xdg/line-launcher/config.json`.
-3. `$XDG_CONFIG_HOME/line-launcher/config.json`, or the file passed with
-   `--config`.
-4. Command-line overrides.
-
-Configuration and palette files are watched. Saving a change updates a running
-launcher without a restart or rebuild.
-
-### Advanced JSON-only matching keys
-
-These settings are accepted in `config.json` but are not exposed as Nix module
-options:
-
-| Key | Default | Purpose |
-| --- | --- | --- |
-| `fontSize` | `14` | font size in pixels; row metrics and glow scale with it |
-| `matchingMethod` | `"normal"` | `normal`, `glob`, `fuzzy`, `regex`, or `prefix` |
+| `matchingMethod` | `"normal"` | `normal`, `glob`, `fuzzy`, `regex`, `prefix` |
 | `sortMatches` | `false` | sort by distance instead of match quality |
-| `sortingMethod` | `"normal"` | `normal` (Levenshtein) or `fzf` distance |
-| `matchFields` | `"name,generic,exec,categories,keywords"` | desktop fields included in matching |
-| `preferNameMatch` | `true` | rank a name match ahead of an executable match |
-| `normalizeMatch` | `false` | remove accents before matching |
-| `drunCache` | `$XDG_CACHE_HOME/line-launcher.druncache` | application/action history file |
-| `commandAccent` | unset | accent used while the `>` provider is active |
-
-Set `drunCache` to an absolute path or a filename relative to
-`$XDG_CACHE_HOME`. Using `"rofi3.druncache"` shares application history with
-Rofi because the file format is compatible.
-
-## Colours and visual effects
-
-When `colorsFile` is unset, the launcher probes these files in order:
-
-| Path | Format |
-| --- | --- |
-| `$XDG_CACHE_HOME/wal/colors.json` | pywal |
-| `$XDG_CACHE_HOME/wallust/colors.json` | wallust |
-| `$XDG_CACHE_HOME/matugen/colors.json` | matugen |
-
-The first readable file wins. For pywal and wallust, `accentKey = "auto"`
-compares `color1` through `color6` with the foreground using CIEDE2000 and
-chooses the most distinct colour. Matugen uses its named `primary`,
-`on_surface`, and `error` roles instead.
-
-The selected palette source, format, accent, and contrast measurement are
-printed in the launcher log at startup.
-
-There are two effects:
-
-- The legibility glow uses the palette background beneath text and frame
-  strokes, helping them survive bright wallpapers.
-- The accent aura follows the selected result and typed query. During a
-  confirmation it transitions to `colors.danger`.
-
-Both radii scale with `fontSize`. Setting `glowEnabled = false` prevents both
-effects from being constructed.
-
-### Layout and animations
-
-The launcher selects Hyprland's focused monitor, occupies a transparent layer
-surface, and places only its visible content at the top centre. `topMargin`
-controls its distance beneath a panel or clock.
-
-The centre frame fades in while its whiskers drift into position over 90 ms.
-Launching a result collapses the box to a line, sends the whiskers outward,
-and flattens the result selection. Escape uses a shorter plain fade so
-launching and cancelling remain visually distinct.
-
-The selection outline and result lane animate together when navigating. With
-`listPerspective = 0`, results form an evenly spaced straight list. Values up
-to `1` progressively narrow and tilt lower rows into a receding fan.
-Visible rows stay fully opaque; perspective supplies the depth without making
-lower application names harder to read.
+| `sortingMethod` | `"normal"` | `normal` (Levenshtein) or `fzf` |
+| `matchFields` | `"name,generic,exec,categories,keywords"` | desktop fields searched (`comment` and `all` also accepted) |
+| `preferNameMatch` | `true` | rank name matches above generic/keyword/category/exec matches |
+| `normalizeMatch` | `false` | strip accents before matching |
+| `drunCache` | `line-launcher.druncache` | launch-history file: absolute, or relative to `$XDG_CACHE_HOME`; `"rofi3.druncache"` shares rofi's history |
+| `commandAccent` | unset | accent while the `>` prefix is active |
+| `fontSize` | `14` | no effect on the current interface |
 
 ## Command-line reference
 
 ```text
 line-launcher [OPTIONS]
-command-producing-lines | line-launcher [OPTIONS]
+<command> | line-launcher [OPTIONS]      # dmenu mode
 ```
 
 | Flag | Effect |
 | --- | --- |
-| `--toggle` | close the running launcher, or open it if absent |
-| `--items N` | override the number of visible result rows |
-| `--prompt TEXT` | set input placeholder text |
-| `--config PATH` | use an alternate readable JSON configuration |
-| `-n NAME`, `--namespace NAME` | set the layer-shell namespace |
-| `-h`, `--help` | print usage information |
+| `--toggle` | close the running launcher, or open it if none is running |
+| `--prompt TEXT` | placeholder text; in dmenu mode also the list header |
+| `--config PATH` | use an alternate `config.json` |
+| `-n NAME`, `--namespace NAME` | layer-shell namespace (default `line-launcher`) |
+| `--items N` | validated and accepted; no effect on the current interface |
+| `-h`, `--help` | usage |
 
-The default namespace is `line-launcher`. A custom namespace must also be used
-in the compositor's layer rule:
+Without `--toggle`, a second launcher does not stack on top of a running one
+(Quickshell `--no-duplicate`); piped invocations are independent.
 
-```sh
-line-launcher --namespace work-launcher
-```
+## Theming
 
-```lua
-hl.layer_rule({
-  match = { namespace = "work-launcher" },
-  blur = true,
-  ignore_alpha = 0.15,
-})
-```
+Colours come from the active palette. With `colorsFile` unset the launcher
+probes, in order, `$XDG_CACHE_HOME/wal/colors.json` (pywal),
+`$XDG_CACHE_HOME/wallust/colors.json` (wallust) and
+`$XDG_CACHE_HOME/matugen/colors.json` (matugen); the first readable file
+wins, and the static `colors` apply when none is found. Rewriting the
+palette file recolours a running launcher.
+
+- Light or dark: dark when the palette background's HSL lightness is below
+  0.5. Text is white or black at fixed opacities in either mode.
+- Panel: the palette background at 60% opacity (dark) or 72% (light), a 1 px
+  inner border, a soft shadow.
+- Accent: for pywal/wallust with `accentKey = "auto"`, whichever of
+  `color1`...`color6` is furthest from the foreground in CIEDE2000; matugen
+  uses its `primary` role. Used for the active chip, the caret and text
+  selection. The chosen source and accent are printed to the log at startup.
+
+The look is defined in [`Theme.qml`](Theme.qml), a singleton at the repo
+root. Below its palette parsing, the "design tokens" section holds every
+value the panel draws with:
+
+| Group | Tokens (defaults) |
+| --- | --- |
+| type | `uiFont`, `displayFont`, `searchFontSize` 22 (Light), `labelFontSize` 12, `chipFontSize` 13, `rowFontSize` 14, `sectionFontSize` 12, `emptyTitleSize` 15, `emptyBodySize` 13 |
+| colour | `textPrimary`, `textSecondary`, `textTertiary`, `placeholder`, `glyph`, `panelOpacity`, `panelFill`, `panelBorder`, `divider`, `shadowColor`, `selectionFill`, `dangerFill`, `chipFill`, `chipHoverFill`, `chipText`, `chipActiveFill`, `chipActiveText`, `clearFill`, `clearHoverFill`, `clearGlyph`, `caret`, `textSelection`, `fallbackIconFill` |
+| radii | `radiusPanel` 20, `radiusTile` 14, `radiusRow` 10 |
+| sizes, spacing | `panelPadding` 20, `searchHeight` 56, `chipHeight` 28, `gridColumns` 5, `cellWidth` 120, `cellHeight` 116, `iconSize` 56, `gridVisibleRows` 3.4, `pageRows` 3, `rowHeight` 40, `listPageRows` 8, `fadeSize` 28, `shadowBlur` 48, `shadowOffsetY` 16, `panelVerticalBias` 0.42, and the rest of the group; `panelWidth`/`panelHeight` are derived |
+| icons | `fallbackIcon` (`application-x-executable`), `commandIcon` (`utilities-terminal`) |
+| durations (ms) | `openDuration` 150, `closeDuration` 110, `closedScale` 0.96, `highlightDuration` 140, `scrollDuration` 180, `chipDuration` 180, `hoverDuration` 120, `fadeDuration` 120, `pressDuration` 90, `caretBlink` 530 |
+
+To change the look, edit the tokens and restart the launcher (or rebuild the
+package). Colour tokens choose per mode with `root.dark ? <dark> : <light>`.
+Constraints:
+
+- `panelFill` alpha must stay above the layer rule's `ignore_alpha` (0.15),
+  or the blur behind the panel is dropped; `shadowColor` alpha must stay
+  below it, or the shadow region gets blurred too.
+- `closeDuration` must stay below 120 ms: the launcher quits 120 ms after Esc
+  or a click outside (160 ms after a launch), and the last frame has to land
+  first.
 
 ## Files and state
 
@@ -563,81 +417,90 @@ hl.layer_rule({
 | --- | --- |
 | `/etc/xdg/line-launcher/config.json` | system configuration |
 | `$XDG_CONFIG_HOME/line-launcher/config.json` | user configuration |
-| `$XDG_CACHE_HOME/line-launcher.druncache` | application/action launch history |
+| `$XDG_CACHE_HOME/line-launcher.druncache` | application/action launch history (rofi format, 25 entries) |
 | `$XDG_STATE_HOME/line-launcher/history.json` | shell-command history |
-
-## Troubleshooting
-
-### Win opens the launcher again instead of closing it
-
-Make sure there is exactly one compositor binding and that it runs:
-
-```sh
-line-launcher --toggle
-```
-
-Do not separately bind Win to `qs kill`, `pkill`, or another close command.
-The toggle must decide whether to open or close atomically.
-
-### The shortcut says `unknown option: --toggle`
-
-Hyprland is finding an older package. Check all available copies:
-
-```sh
-type -a line-launcher
-line-launcher --help
-```
-
-Rebuild the Home Manager/NixOS configuration or use the stable Home Manager
-profile path shown in the Hyprland setup section.
-
-### The whole monitor is blurred
-
-Verify that the rule matches namespace `line-launcher` and sets
-`ignore_alpha = 0.15`. The surface is intentionally full-screen and mostly
-transparent.
-
-### Colours do not update
-
-Check the startup log for the selected palette path and format. Confirm that
-the JSON file exists and is readable. An explicit `colorsFile` disables all
-automatic palette probing.
-
-### Power actions do not run
-
-The launcher runs the configured command; permissions are controlled by the
-system. Test the same command in a terminal, for example:
-
-```sh
-systemctl reboot
-```
-
-### Inspect or close running instances
-
-```sh
-qs list --all
-qs kill --path /path/to/line-launcher
-```
 
 ## Development and tests
 
 ```sh
-nix develop
+nix develop          # quickshell, Qt tooling, shellcheck, alejandra
+QS_ICON_THEME=Papirus-Dark qs -p .    # run the checkout (any icon theme name)
+./launcher.sh --toggle               # or through the wrapper script, with qs on PATH
+```
+
+### Test suite
+
+```sh
 ./tests/run.sh
 nix flake check
 ```
 
-Run the checkout directly with:
+`tests/run.sh` runs headless (`QT_QPA_PLATFORM=offscreen`, isolated XDG
+directories): the CLI wrapper (argument validation, dmenu output,
+cancellation), `activation` (confirm and launch), `color` (CIEDE2000 and the
+accent choice), `frame` (config layering, palette colours, the search field
+key map), `search` (matching, ranking, history, actions, commands, dmenu,
+layout fallback) and `detect` (palette auto-detection), and finally checks
+that `shell.qml` compiles. It exits non-zero on any failure.
+
+### Search baseline
 
 ```sh
-qs -p .
+tests/baseline/run.sh            # compare against tests/baseline/baseline.json
+tests/baseline/run.sh --record   # rewrite baseline.json
 ```
+
+The baseline guards the search engine. It runs `shell.qml` verbatim up to
+its `window` section marker (providers, ranking, history), `rofi-search.js`
+and the providers over the machine's live desktop-entry index. Launch and
+command history come from the fixtures in `tests/baseline/fixtures/`. It
+pushes the 25 queries in `tests/baseline/queries.json` through and writes
+each ordered result list, plus the application catalog it ran against, as
+JSON.
+
+`BASELINE: IDENTICAL` (exit 0) means every query returned the same results
+in the same order, with the same entry Enter would launch, as when the
+baseline was recorded. Otherwise it prints `BASELINE: DIFFERS` and a unified
+diff (exit 1). A change in installed applications shows up in the `catalog`
+part of the diff; on a different machine, record a baseline first and compare
+against that.
+
+## Known limitations
+
+- Hyprland's blur is applied per pixel, on or off by `ignore_alpha`; it
+  cannot fade in with the panel. It switches on, at full strength, once the
+  fading panel's alpha crosses the threshold, early in the open animation.
+- The shadow must stay below `ignore_alpha`, so it is lighter than macOS's.
+- A cold start can take up to about 0.7 s to load all icons when the hicolor
+  icon theme has no `icon-theme.cache`; icons fade in over placeholders
+  meanwhile. On NixOS, `gtk.iconCache.enable = true` may help (untested).
+- `--toggle` closes instantly, without the close animation.
+- The panel size is fixed by `Theme.qml`; there are no layout options in
+  `config.json`.
+
+## Troubleshooting
+
+- **The launcher reopens instead of closing.** There must be exactly one
+  binding, running `line-launcher --toggle`.
+- **`unknown option: --toggle`.** Hyprland finds an older package; check
+  `type -a line-launcher` and rebuild, or use the profile path above.
+- **The whole monitor is blurred, or nothing is.** The layer rule must match
+  the namespace (`line-launcher` unless `--namespace` is used) and set
+  `ignore_alpha = 0.15`.
+- **Letter tiles instead of icons.** No icon theme reached Quickshell: check
+  `gtk-icon-theme-name` in `~/.config/gtk-3.0/settings.ini`, or set
+  `QS_ICON_THEME`.
+- **Wrong font.** Inter is not installed; `fc-match Inter` shows the
+  substitute.
+- **Colours do not update.** The startup log names the palette file and
+  format in use; an explicit `colorsFile` disables probing.
+- **Inspect or close instances.** `qs list --all`, `qs kill --path <qml dir>`.
 
 ## Credits
 
 `rofi-search.js` is taken from
 [wave-launcher](https://github.com/Kalkaro/wave-launcher) (MIT), which ports
-the search, ranking, and history logic from
+the search, ranking and history logic from
 [Rofi](https://github.com/davatorium/rofi) (MIT). Both licences are reproduced
 in [`licenses/`](licenses/).
 

@@ -20,7 +20,7 @@ ShellRoot {
     }
 
     Item {
-        SearchFrame {
+        SearchField {
             id: frame
             onAccepted: controller.activate()
             onKeyActivity: (key, modifiers) => controller.keyActivity(key, modifiers)

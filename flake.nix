@@ -52,13 +52,6 @@
           pkgs.qt6.qtimageformats
           pkgs.shellcheck
           pkgs.alejandra
-          # tests/run.sh renders the glow suite against this: the offscreen
-          # platform falls back to the software renderer, where every
-          # ShaderEffect is a no-op.
-          pkgs.xorg.xvfb
-          # tests/run.sh compares the two rendered previews with this, to
-          # prove the halos reached the glass rather than merely existing.
-          pkgs.imagemagick
         ];
 
         shellHook = ''

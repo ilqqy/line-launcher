@@ -11,3 +11,15 @@ ResultList 1.0 ResultList.qml
 ResultItem 1.0 ResultItem.qml
 SelectionOutline 1.0 SelectionOutline.qml
 ActivationController 1.0 ActivationController.qml
+
+GlassPanel 1.0 GlassPanel.qml
+EdgeFadeMask 1.0 EdgeFadeMask.qml
+MagnifierGlyph 1.0 MagnifierGlyph.qml
+SearchField 1.0 SearchField.qml
+CategoryBar 1.0 CategoryBar.qml
+AppIcon 1.0 AppIcon.qml
+AppTile 1.0 AppTile.qml
+AppGrid 1.0 AppGrid.qml
+ResultRows 1.0 ResultRows.qml
+EmptyState 1.0 EmptyState.qml
+LauncherPanel 1.0 LauncherPanel.qml

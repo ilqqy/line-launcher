@@ -82,11 +82,13 @@ function entryIn(entry, key) {
 }
 
 // The icon name or path a result asks for; "" leaves it to the fallback.
-function iconFor(entry) {
+// Shell commands carry no icon of their own and get `commandIcon`
+// (Theme.commandIcon at the call sites).
+function iconFor(entry, commandIcon) {
     var payload = payloadObject(entry);
     if (payload && typeof payload.icon === "string" && payload.icon !== "")
         return payload.icon;
     if (entry && entry.source && entry.source.literalMatching)
-        return "utilities-terminal";
+        return commandIcon || "";
     return "";
 }

@@ -32,7 +32,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         y: Theme.iconTop
         size: Theme.iconSize
-        name: Launchpad.iconFor(root.modelData)
+        name: Launchpad.iconFor(root.modelData, Theme.commandIcon)
         label: root.modelData ? root.modelData.name : ""
 
         scale: mouse.pressed ? Theme.pressedScale : 1

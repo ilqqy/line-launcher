@@ -56,7 +56,7 @@ Item {
 
                 sourceComponent: AppIcon {
                     size: Theme.rowIconSize
-                    name: Launchpad.iconFor(row.modelData)
+                    name: Launchpad.iconFor(row.modelData, Theme.commandIcon)
                     label: row.modelData ? row.modelData.name : ""
                 }
             }

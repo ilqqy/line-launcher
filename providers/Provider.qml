@@ -95,26 +95,43 @@ QtObject {
         return configured.split(/\s+/).filter(part => part.length > 0);
     }
 
-    function run(argv: var, inTerminal: bool) {
-        if (!argv || argv.length === 0) return;
-
-        let final = argv;
+    // The full argv for a launch: the terminal (if any) in front of `argv`,
+    // all of it behind launch-app.sh, which gives the program a systemd scope
+    // of its own when it can. Otherwise a program started from the resident
+    // launcher would live in line-launcher.service's cgroup and die with it.
+    // `options.id` and `options.name` label the scope.
+    function launchCommand(argv: var, inTerminal: bool, options: var): var {
+        let command = Array.from(argv);
         if (inTerminal) {
             const term = root.terminalArgv();
             if (term.length === 0) {
                 console.warn("line-launcher: no terminal configured; running \""
-                    + argv.join(" ") + "\" without one");
+                    + command.join(" ") + "\" without one");
             } else {
-                final = term.concat(argv);
+                command = term.concat(command);
             }
         }
 
-        Quickshell.execDetached(final);
+        const opts = options || {};
+        return ["sh", Quickshell.shellPath("launch-app.sh"),
+            "--id", opts.id || "", "--name", opts.name || "", "--"].concat(command);
     }
 
-    function runShell(command: string, inTerminal: bool) {
+    // `options.workingDirectory` is the directory to start in; empty keeps
+    // the launcher's own, as before.
+    function run(argv: var, inTerminal: bool, options: var) {
+        if (!argv || argv.length === 0) return;
+
+        const opts = options || {};
+        Quickshell.execDetached({
+            "command": root.launchCommand(argv, inTerminal, opts),
+            "workingDirectory": opts.workingDirectory || ""
+        });
+    }
+
+    function runShell(command: string, inTerminal: bool, options: var) {
         if (!command || command.trim() === "") return;
-        root.run(["sh", "-c", command], inTerminal);
+        root.run(["sh", "-c", command], inTerminal, options);
     }
 
     // ------------------------------------------------------------- helpers

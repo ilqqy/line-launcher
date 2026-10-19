@@ -107,6 +107,6 @@ Provider {
 
     function activate(payload: var) {
         root.remember(payload);
-        root.runShell(payload, false);
+        root.runShell(payload, false, {"id": "command", "name": payload});
     }
 }

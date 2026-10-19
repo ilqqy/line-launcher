@@ -29,5 +29,25 @@ in {
 
     xdg.configFile."line-launcher/config.json".text =
       options.mkConfigJson {inherit cfg stylixColors;};
+
+    # Runs through the same wrapper as the keybinding, so the PATH and the
+    # QS_ICON_THEME it derives are identical; everything else comes from the
+    # user manager's environment, which this deliberately does not override.
+    systemd.user.services.line-launcher = lib.mkIf cfg.resident {
+      Unit = {
+        Description = "line-launcher, resident and hidden until toggled";
+        PartOf = ["graphical-session.target"];
+        After = ["graphical-session.target"];
+        # Without a compositor to connect to, Restart= would only loop.
+        ConditionEnvironment = "WAYLAND_DISPLAY";
+      };
+      Service = {
+        Type = "simple";
+        ExecStart = "${lib.getExe cfg.package} --daemon";
+        Restart = "always";
+        RestartSec = 1;
+      };
+      Install.WantedBy = ["graphical-session.target"];
+    };
   };
 }

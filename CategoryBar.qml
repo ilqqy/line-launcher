@@ -15,6 +15,8 @@ Item {
 
     signal activated(string key)
 
+    readonly property alias view: list
+
     readonly property int activeIndex: {
         for (let i = 0; i < root.model.length; i++) {
             if (root.model[i].key === root.activeKey) return i;
@@ -129,6 +131,12 @@ Item {
         property: "contentX"
         duration: Theme.scrollDuration
         easing.type: Easing.OutCubic
+    }
+
+    // Back to the first chip, without travelling.
+    function resetScroll() {
+        scroller.stop();
+        list.contentX = list.originX - list.leftMargin;
     }
 
     // Bring the active chip clear of the edge fades.

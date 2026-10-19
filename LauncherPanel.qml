@@ -34,6 +34,10 @@ Item {
     readonly property alias text: field.text
     // Exposed so tests can type and press keys without a compositor.
     readonly property alias field: field
+    // Exposed so tests can scroll and read back the reset.
+    readonly property alias grid: grid
+    readonly property alias rows: rows
+    readonly property alias categoryBar: categoryBar
 
     signal selectRequested(int index)
     signal accepted()
@@ -42,6 +46,19 @@ Item {
 
     function focusInput() {
         field.focusInput();
+    }
+
+    // Back to how a fresh launch looks: empty query, "All", every list at its
+    // start, and no remembered pointer position. The resident launcher calls
+    // this on every show; the shell resets its own selection.
+    function reset() {
+        field.reset();
+        root.reselectPending = false;
+        root.category = Launchpad.allKey;
+        root.lastPointer = Qt.point(-1, -1);
+        grid.resetScroll();
+        rows.resetScroll();
+        categoryBar.resetScroll();
     }
 
     implicitWidth: Theme.panelWidth
@@ -233,6 +250,8 @@ Item {
     }
 
     CategoryBar {
+        id: categoryBar
+
         y: Theme.chipsY
         width: parent.width
         height: Theme.chipHeight

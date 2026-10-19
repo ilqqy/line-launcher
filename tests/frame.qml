@@ -123,6 +123,11 @@ ShellRoot {
             suite.check("Down still moves down in the grid",
                 suite.pressed(Qt.Key_Down, Qt.NoModifier), "down");
 
+            // --- resident --------------------------------------------------
+            suite.check("resident flag is set by the runner",
+                Quickshell.env("LINE_LAUNCHER_RESIDENT"), "1");
+            suite.check("a piped menu is never resident", Config.resident, false);
+
             // --- pixel snapping -------------------------------------------
             Config.devicePixelRatio = 2;
             suite.check("snap to half pixels at dpr 2", Config.snap(10.4), 10.5);

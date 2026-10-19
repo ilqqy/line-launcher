@@ -249,6 +249,12 @@ Singleton {
     readonly property string dmenuOutputPath: Quickshell.env("LINE_LAUNCHER_DMENU_OUT") || ""
     readonly property bool dmenuMode: root.dmenuInputPath !== ""
 
+    // ---------------------------------------------------------- resident
+
+    // launcher.sh --daemon: start hidden, hide instead of quitting, and take
+    // show/hide/toggle over IPC. A piped menu is always a one-off process.
+    readonly property bool resident: Quickshell.env("LINE_LAUNCHER_RESIDENT") === "1" && !root.dmenuMode
+
     // ---------------------------------------------------------- colour cfg
 
     readonly property string explicitColorsFile: root.data.colorsFile || ""

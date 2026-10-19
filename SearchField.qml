@@ -254,4 +254,8 @@ Item {
     function focusInput() {
         input.forceActiveFocus();
     }
+
+    function reset() {
+        input.clear();
+    }
 }

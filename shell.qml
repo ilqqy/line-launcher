@@ -162,7 +162,13 @@ ShellRoot {
         blockWrites: true
         atomicWrites: true
         printErrors: false
+        // A resident launcher outlives any one read: rofi, or another
+        // line-launcher process, may record launches in the meantime.
+        watchChanges: Config.resident
 
+        // `text()` still returns the previous contents when fileChanged
+        // fires; reload() re-reads and emits loaded with the new bytes.
+        onFileChanged: drunCacheFile.reload()
         onLoaded: shell.drunHistoryGeneration += 1
         onLoadFailed: shell.drunHistoryGeneration += 1
     }
@@ -193,10 +199,11 @@ ShellRoot {
 
     // -------------------------------------------------------- open handling
 
-    // False until the window is on screen for the first time. Everything the
-    // entrance animates rests at its off state while this is false, so the
-    // animation starts from the first visible frame rather than running while
-    // the surface is still hidden waiting on the monitor.
+    // False until the window is on screen, and again once a resident launcher
+    // has hidden it. Everything the entrance animates rests at its off state
+    // while this is false, so the animation starts from the first visible
+    // frame rather than running while the surface is still hidden waiting on
+    // the monitor.
     property bool entered: false
 
     // -------------------------------------------------------- close handling
@@ -219,7 +226,81 @@ ShellRoot {
     Timer {
         id: exitTimer
         repeat: false
-        onTriggered: Qt.quit()
+        onTriggered: shell.finishClose()
+    }
+
+    function finishClose() {
+        if (!Config.resident) {
+            Qt.quit();
+            return;
+        }
+        shell.shown = false;
+        shell.entered = false;
+        shell.resetSession();
+    }
+
+    // ------------------------------------------------------- resident mode
+
+    // A one-shot launcher is shown from the start and quits when it closes.
+    // The resident instance (launcher.sh --daemon) starts hidden, hides when
+    // it closes, and is shown again over IPC by launcher.sh --toggle.
+    property bool shown: !Config.resident
+
+    IpcHandler {
+        id: ipc
+
+        target: "launcher"
+        // Piped menus run as separate one-off processes and never answer.
+        enabled: Config.resident
+
+        function toggle(): void {
+            shell.toggle();
+        }
+        function show(): void {
+            shell.show();
+        }
+        function hide(): void {
+            shell.hide();
+        }
+    }
+
+    function toggle() {
+        if (shell.shown && shell.closing === shell.closeNone) shell.close(shell.closeFade);
+        else shell.show();
+    }
+
+    function hide() {
+        if (shell.shown) shell.close(shell.closeFade);
+    }
+
+    function show() {
+        if (shell.shown) {
+            // Reopened during the exit animation: cancel it, and the entrance
+            // runs back from wherever the exit had reached. The window stays
+            // mapped, so the monitor is not re-resolved.
+            if (shell.closing === shell.closeNone) return;
+            exitTimer.stop();
+            shell.resetSession();
+            return;
+        }
+
+        shell.resetSession();
+        // The user may have moved to another monitor since the last show.
+        // Hyprland's IPC is long connected by now, so this normally resolves
+        // on the spot; screenDeadline covers the rest.
+        shell.screenResolved = false;
+        if (!shell.hyprlandAvailable || Hyprland.focusedMonitor !== null) shell.resolveScreen();
+        shell.shown = true;
+    }
+
+    // Every show starts like a fresh launch: empty query, "All", top of the
+    // lists, first result selected, nothing armed for confirmation.
+    function resetSession() {
+        frame.reset();
+        shell.currentIndex = 0;
+        activation.armedItem = null;
+        activation.closing = false;
+        shell.closing = shell.closeNone;
     }
 
     // -------------------------------------------------- monitor resolution
@@ -297,7 +378,7 @@ ShellRoot {
         }
 
         color: "transparent"
-        visible: shell.screenResolved
+        visible: shell.screenResolved && shell.shown
 
         onVisibleChanged: {
             if (!window.visible) return;
@@ -340,6 +421,17 @@ ShellRoot {
             // below the blur's ignore_alpha, so nothing shows meanwhile.
             property bool primed: false
             property int primeFrames: 0
+
+            // A resident launcher enters again on every show, onto a newly
+            // mapped surface; it primes again with it.
+            Connections {
+                target: shell
+                function onEnteredChanged() {
+                    if (shell.entered) return;
+                    stage.primed = false;
+                    stage.primeFrames = 0;
+                }
+            }
 
             FrameAnimation {
                 running: shell.entered && !stage.primed

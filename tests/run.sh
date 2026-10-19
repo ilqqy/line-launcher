@@ -82,7 +82,7 @@ bash "$repo/tests/launch-wrapper.sh" || status=1
 for test_file in "$repo"/tests/*.qml; do
 	name=$(basename -- "$test_file" .qml)
 	# Needs a different environment; run separately below.
-	if [[ "$name" == detect || "$name" == desktop-entries ]]; then
+	if [[ "$name" == detect || "$name" == desktop-entries || "$name" == launch ]]; then
 		continue
 	fi
 	echo "== $name"
@@ -124,6 +124,79 @@ printf '[Desktop Entry]\nType=Application\nName=Two\nExec=true\n' >"$xdg/gen1/sh
 ln -s gen1 "$xdg/profile"
 if ! XDG_DATA_HOME="$xdg/home" XDG_DATA_DIRS="$xdg/plain:$xdg/profile/share" \
 	LINE_LAUNCHER_TEST_XDG="$xdg" run_suite "$repo/tests/desktop-entries.qml"; then
+	status=1
+fi
+
+# Every launch path for real, outside dmenu mode, with fixture applications,
+# a fake terminal that logs what it was asked to run, and a recorder program.
+echo "== launch"
+launch=$work/launch
+mkdir -p "$launch/home" "$launch/data/applications" "$launch/out" "$launch/pathdir"
+cat >"$launch/record" <<'SH'
+#!/bin/sh
+out=$RECORD_DIR/$1
+{
+	for arg in "$@"; do printf 'arg=%s\n' "$arg"; done
+	printf 'cwd=%s\n' "$PWD"
+	printf 'env=%s\n' "$LAUNCH_TEST_VAR"
+} >"$out.tmp" && mv -- "$out.tmp" "$out"
+SH
+cat >"$launch/fake-term" <<'SH'
+#!/bin/sh
+printf '%s\n' "$*" >>"$TERMINAL_LOG"
+shift
+exec "$@"
+SH
+# A fake systemd-run that logs the scope it was asked for, then runs the
+# command as the real one does once the scope exists; and a stand-in for the
+# user manager's socket, so launch-app.sh takes its scope path.
+mkdir -p "$launch/bin" "$launch/runtime/systemd"
+chmod 700 "$launch/runtime"
+cat >"$launch/bin/systemd-run" <<'SH'
+#!/bin/sh
+unit= description=
+while [ "$1" != -- ]; do
+	case $1 in --unit=*) unit=${1#--unit=} ;; --description=*) description=${1#--description=} ;; esac
+	shift
+done
+shift
+printf '%s|%s\n' "$description" "$unit" >>"$SYSTEMD_RUN_LOG"
+exec "$@"
+SH
+chmod +x "$launch/record" "$launch/fake-term" "$launch/bin/systemd-run"
+python3 -c 'import socket, sys; socket.socket(socket.AF_UNIX).bind(sys.argv[1])' "$launch/runtime/systemd/private"
+cat >"$launch/data/applications/bench-plain.desktop" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=Bench Plain
+Exec=$launch/record drun "two words" %U
+Path=$launch/pathdir
+DESKTOP
+cat >"$launch/data/applications/bench-term.desktop" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=Bench Term
+Exec=$launch/record drun-term
+Terminal=true
+DESKTOP
+cat >"$launch/config.json" <<JSON
+{
+  "terminal": "$launch/fake-term -e",
+  "drunCache": "$launch/druncache",
+  "actions": [
+    { "name": "Bench Action", "exec": "$launch/record action 'a b'" },
+    { "name": "Bench Terminal Action", "exec": "$launch/record action-term", "terminal": true }
+  ]
+}
+JSON
+if ! (
+	unset LINE_LAUNCHER_DMENU_IN LINE_LAUNCHER_DMENU_OUT LINE_LAUNCHER_SCOPE
+	export LINE_LAUNCHER_CONFIG="$launch/config.json" LINE_LAUNCHER_TEST_LAUNCH="$launch"
+	export XDG_DATA_HOME="$launch/home" XDG_DATA_DIRS="$launch/data"
+	export RECORD_DIR="$launch/out" TERMINAL_LOG="$launch/terminal.log" LAUNCH_TEST_VAR="from the launcher"
+	export XDG_RUNTIME_DIR="$launch/runtime" PATH="$launch/bin:$PATH" SYSTEMD_RUN_LOG="$launch/systemd-run.log"
+	run_suite "$repo/tests/launch.qml"
+); then
 	status=1
 fi
 

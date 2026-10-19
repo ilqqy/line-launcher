@@ -41,6 +41,9 @@ Provider {
     }
 
     function activate(payload: var) {
-        root.runShell(payload.exec, payload.terminal === true);
+        root.runShell(payload.exec, payload.terminal === true, {
+            "id": "action-" + payload.name,
+            "name": payload.name
+        });
     }
 }

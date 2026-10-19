@@ -65,19 +65,21 @@ Provider {
         return root.prepared;
     }
 
+    // Not payload.execute(): that starts the entry in the launcher's own
+    // cgroup. It amounts to execDetached() of `command` (the Exec line, field
+    // codes dropped) in `workingDirectory` (Path=), which is what run() does,
+    // through the scope wrapper -- and with Config.terminal in front for
+    // Terminal=true entries.
     function activate(payload: var) {
-        if (payload.runInTerminal) {
-            // execute() does not know about Config.terminal, so terminal
-            // entries take the explicit path.
-            const command = payload.command;
-            if (!command || command.length === 0) {
-                console.warn("line-launcher: desktop entry has no command:", payload.id);
-                return;
-            }
-            root.run(Array.from(command), true);
+        const command = payload.command;
+        if (!command || command.length === 0) {
+            console.warn("line-launcher: desktop entry has no command:", payload.id);
             return;
         }
-
-        payload.execute();
+        root.run(Array.from(command), payload.runInTerminal, {
+            "id": payload.id,
+            "name": payload.name,
+            "workingDirectory": payload.workingDirectory
+        });
     }
 }

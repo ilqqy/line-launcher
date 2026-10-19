@@ -105,7 +105,9 @@ Item {
     // cell and the scroll returns to the top without travelling.
     property bool glide: true
 
-    onEntriesChanged: {
+    onEntriesChanged: root.resetScroll()
+
+    function resetScroll() {
         root.glide = false;
         scroller.stop();
         grid.contentY = grid.originY;

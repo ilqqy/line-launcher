@@ -19,6 +19,8 @@ Item {
 
     readonly property real step: Theme.rowHeight + Theme.rowSpacing
 
+    readonly property alias view: list
+
     ListView {
         id: list
 
@@ -143,7 +145,9 @@ Item {
 
     property bool glide: true
 
-    onEntriesChanged: {
+    onEntriesChanged: root.resetScroll()
+
+    function resetScroll() {
         root.glide = false;
         scroller.stop();
         list.contentY = list.originY;

@@ -11,15 +11,16 @@
     pname = "line-launcher-qml";
     version = "0.1.0";
 
-    # Only the QML sources and their qmldir belong in the store copy: no
-    # flake, no nix/, no tests. Derived from the extensions rather than a
-    # hand-kept list, so new components need no change here.
+    # Only the QML sources, their qmldir and the launch wrapper the QML runs
+    # (launch-app.sh) belong in the store copy: no flake, no nix/, no tests.
+    # Derived from the extensions rather than a hand-kept list, so new
+    # components need no change here.
     src = lib.fileset.toSource {
       root = ../.;
       fileset =
         lib.fileset.difference
         (lib.fileset.fileFilter
-          (file: file.hasExt "qml" || file.hasExt "js" || file.name == "qmldir")
+          (file: file.hasExt "qml" || file.hasExt "js" || file.name == "qmldir" || file.name == "launch-app.sh")
           ../.)
         (lib.fileset.maybeMissing ../tests);
     };

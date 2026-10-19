@@ -21,7 +21,7 @@ mkdir -m 700 "$XDG_RUNTIME_DIR"
 export XDG_CONFIG_HOME="$work/config"
 unset WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE
 
-cp -r -- "$repo"/*.qml "$repo"/*.js "$repo"/qmldir "$work/"
+cp -r -- "$repo"/*.qml "$repo"/*.js "$repo"/qmldir "$repo"/launch-app.sh "$work/"
 if [ -d "$repo/providers" ]; then
 	cp -r -- "$repo/providers" "$work/"
 fi
@@ -77,6 +77,8 @@ run_suite() {
 status=0
 echo "== wrapper"
 bash "$repo/tests/wrapper.sh" || status=1
+echo "== launch-wrapper"
+bash "$repo/tests/launch-wrapper.sh" || status=1
 for test_file in "$repo"/tests/*.qml; do
 	name=$(basename -- "$test_file" .qml)
 	# Needs a different environment; run separately below.

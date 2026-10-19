@@ -53,6 +53,26 @@ in rec {
       description = "The line-launcher package to use.";
     };
 
+    resident = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Keep a launcher running in the background, hidden, as the systemd
+        user service `line-launcher.service` (`line-launcher --daemon`), started
+        with `graphical-session.target`. `line-launcher --toggle` then shows
+        and hides it over Quickshell IPC instead of starting a new Quickshell
+        process each time, and falls back to that cold start whenever the
+        service is not running.
+
+        Costs the memory of an idle Quickshell process for the whole session.
+        The service takes its environment from the systemd user manager, so
+        the session's `WAYLAND_DISPLAY`, `XDG_DATA_DIRS`, `PATH` and Qt
+        variables must be imported into it (Hyprland's and most compositors'
+        systemd integration do this); applications launched from it inherit
+        that environment. See the README for the other trade-offs.
+      '';
+    };
+
     font = mkOption {
       type = types.nullOr types.str;
       default = null;

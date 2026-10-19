@@ -168,6 +168,76 @@ hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd(launcher .. " --toggle"))
 
 A custom namespace (`--namespace NAME`) needs the same rule with that name.
 
+## Resident launcher
+
+By default every `--toggle` starts a new Quickshell process, and most of the
+time before the panel appears is Quickshell starting up and compiling the
+QML. A resident launcher pays that once: one process stays running with its
+window hidden, and `--toggle` shows and hides it. Measured on one machine
+(Hyprland, 240 Hz), from running `--toggle` to the first visible frame:
+226 ms cold, 72 ms resident, of which about 35 ms is the `qs ipc` call.
+
+With the modules, set
+
+```nix
+programs.line-launcher.resident = true;
+```
+
+This adds the systemd user service `line-launcher.service`
+(`line-launcher --daemon`, `Restart=always`), started and stopped with
+`graphical-session.target`. The Hyprland binding stays exactly as above.
+Without the modules, run `line-launcher --daemon` once per session from your
+compositor's autostart or a unit of your own.
+
+How it behaves:
+
+- `--toggle`, and a plain `line-launcher` from a terminal, go to the resident
+  launcher over Quickshell IPC. When it is not running (not started, or
+  between a crash and its restart) or does not answer, they start a one-off
+  launcher exactly as without it.
+- Every show starts clean: empty query, "All", lists scrolled to the top,
+  the first result selected, no action waiting for confirmation, and the
+  panel on the monitor that has focus at that moment.
+- Esc, a click outside, a launch and `--toggle` hide it with the normal close
+  animation; the process keeps running.
+- The application list follows `.desktop` files being added, changed or
+  removed, including a profile switch: Quickshell watches the data
+  directories and their parents. The launch history file and the palette and
+  `config.json` are watched too.
+- `--items`, `--prompt`, `--config` and `--namespace` cannot be applied to a
+  process that is already running. With any of them, `--toggle` opens a
+  one-off launcher; pass them to `--daemon` to configure the resident one.
+- Piped menus (`cliphist list | line-launcher`) are always one-off processes.
+  The resident launcher runs `resident.qml`, a symlink to `shell.qml`, which
+  Quickshell treats as a separate configuration: one-off launchers and menus
+  never answer its IPC, and `--toggle`'s `qs kill` never reaches it.
+
+The IPC target can be called directly, with the QML directory the wrapper
+exports as `LINE_LAUNCHER_QML_DIR`:
+
+```sh
+qs ipc --path "$qml_dir/resident.qml" call launcher toggle   # or show, hide
+```
+
+Trade-offs:
+
+- Memory: an idle Quickshell process with the launcher loaded stays in memory
+  for the whole session. Measured hidden: about 50 MB PSS (130 MB RSS)
+  before the first show, about 77 MB PSS (175 MB RSS) once it has been shown,
+  flat over further shows.
+- Environment: the service gets the systemd user manager's environment, not
+  the compositor's, and applications launched from it inherit that. The
+  session's `WAYLAND_DISPLAY`, `XDG_DATA_DIRS`, `PATH` and Qt variables must
+  be imported into systemd (Hyprland's systemd integration, or
+  `dbus-update-activation-environment --systemd --all`). The unit only starts
+  when `WAYLAND_DISPLAY` is present. Variables changed later reach it only
+  after a restart.
+- Updates: the running process keeps the version it started with. If a
+  rebuild does not restart the service, run
+  `systemctl --user restart line-launcher.service`.
+- Crashes: systemd restarts it after a second; `--toggle` meanwhile falls
+  back to a one-off launcher.
+
 ## Using the launcher
 
 ### Layout
@@ -304,6 +374,7 @@ ends the running instance with `qs kill`.
 | --- | --- | --- |
 | `enable` | `false` | install and write `config.json` |
 | `package` | flake package | package to install |
+| `resident` | `false` | run a hidden resident launcher as a systemd user service (see [Resident launcher](#resident-launcher)) |
 | `font` | `null` | font family; null requests Inter |
 | `terminal` | `null` | terminal command for `Terminal=true` entries and `terminal = true` actions; null uses `$TERMINAL` |
 | `colorsFile` | `null` | palette JSON path; null probes pywal, wallust, matugen (see [Theming](#theming)) |
@@ -360,7 +431,8 @@ line-launcher [OPTIONS]
 
 | Flag | Effect |
 | --- | --- |
-| `--toggle` | close the running launcher, or open it if none is running |
+| `--toggle` | close the running launcher, or open it if none is running; goes to the resident launcher when one is running |
+| `--daemon` | run the resident launcher: hidden until toggled, stays running (see [Resident launcher](#resident-launcher)) |
 | `--prompt TEXT` | placeholder text; in dmenu mode also the list header |
 | `--config PATH` | use an alternate `config.json` |
 | `-n NAME`, `--namespace NAME` | layer-shell namespace (default `line-launcher`) |
@@ -368,7 +440,8 @@ line-launcher [OPTIONS]
 | `-h`, `--help` | usage |
 
 Without `--toggle`, a second launcher does not stack on top of a running one
-(Quickshell `--no-duplicate`); piped invocations are independent.
+(Quickshell `--no-duplicate`); piped invocations are independent. A second
+`--daemon` exits at once while one is running.
 
 ## Theming
 
@@ -420,6 +493,7 @@ Constraints:
 | `$XDG_CONFIG_HOME/line-launcher/config.json` | user configuration |
 | `$XDG_CACHE_HOME/line-launcher.druncache` | application/action launch history (rofi format, 25 entries) |
 | `$XDG_STATE_HOME/line-launcher/history.json` | shell-command history |
+| `$XDG_RUNTIME_DIR/line-launcher-$UID-resident.pid` | pid of the resident launcher; `--toggle` skips IPC unless it is alive |
 
 ## Development and tests
 
@@ -438,11 +512,16 @@ nix flake check
 
 `tests/run.sh` runs headless (`QT_QPA_PLATFORM=offscreen`, isolated XDG
 directories): the CLI wrapper (argument validation, dmenu output,
-cancellation), `activation` (confirm and launch), `color` (CIEDE2000 and the
-accent choice), `frame` (config layering, palette colours, the search field
-key map), `search` (matching, ranking, history, actions, commands, dmenu,
-layout fallback) and `detect` (palette auto-detection), and finally checks
-that `shell.qml` compiles. It exits non-zero on any failure.
+cancellation, `--daemon` and the IPC toggle with its fallbacks),
+`activation` (confirm and launch), `color` (CIEDE2000 and the accent choice),
+`frame` (config layering, palette colours, the search field key map), `grid`
+(icons below the fold load on scroll), `panel` (the reset on every show),
+`search` (matching, ranking, history, actions, commands, dmenu, layout
+fallback), `detect` (palette auto-detection), `desktop-entries` (the
+application list following added and removed `.desktop` files and a profile
+switch), `resident` (show, hide, toggle and history reload, on `shell.qml`'s
+real logic), and finally checks that `shell.qml` and `resident.qml` compile.
+It exits non-zero on any failure.
 
 ### Search baseline
 
@@ -478,7 +557,8 @@ against that.
   after the panel appears. NixOS builds no caches unless
   `gtk.iconCache.enable = true` (its default follows
   `services.xserver.enable`); with it, the same icons load in about 80 ms.
-- `--toggle` closes instantly, without the close animation.
+- Without a resident launcher, `--toggle` closes instantly, without the close
+  animation.
 - The panel size is fixed by `Theme.qml`; there are no layout options in
   `config.json`.
 
@@ -498,7 +578,12 @@ against that.
   substitute.
 - **Colours do not update.** The startup log names the palette file and
   format in use; an explicit `colorsFile` disables probing.
-- **Inspect or close instances.** `qs list --all`, `qs kill --path <qml dir>`.
+- **Inspect or close instances.** `qs list --all`, `qs kill --path <qml dir>`;
+  the resident launcher is `qs list --path <qml dir>/resident.qml`, and is
+  stopped with `systemctl --user stop line-launcher.service`.
+- **The resident launcher shows no or old applications, or launched apps
+  miss programs.** Its environment is the systemd user manager's:
+  compare `systemctl --user show-environment` with your session.
 
 ## Credits
 

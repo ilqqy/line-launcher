@@ -236,7 +236,9 @@ Trade-offs:
   rebuild does not restart the service, run
   `systemctl --user restart line-launcher.service`.
 - Crashes: systemd restarts it after a second; `--toggle` meanwhile falls
-  back to a one-off launcher.
+  back to a one-off launcher. Applications started from it are not affected:
+  each runs in its own scope (see
+  [Where launched programs run](#where-launched-programs-run)).
 
 ## Using the launcher
 
@@ -337,6 +339,36 @@ Lines are shown as rows under an "Items" header (or the `--prompt` text),
 without icons and without category chips. A line containing tabs shows its
 second column but returns the whole line, as rofi's `-display-columns 2` does
 for `cliphist`. Displayed lines are cut at `maxCharacters`.
+
+### Where launched programs run
+
+Every program the launcher starts -- applications, `Terminal=true`
+applications inside `terminal`, actions, `>` commands -- goes through
+`launch-app.sh`, which ships next to the QML. When a systemd user manager is
+running, it starts the program in a transient scope of its own:
+
+```text
+app.slice/app-line\x2dlauncher-<desktop id>-<pid>.scope
+```
+
+(`action-<name>` for actions, `command` for `>` commands, named after the
+application in `systemctl --user status`). The program is then independent
+of the launcher: restarting or stopping `line-launcher.service`, or a crash
+of it, does not take it down, as it otherwise would with systemd's default
+`KillMode=control-group`. Children it forks, and programs that daemonize,
+stay in that scope.
+
+`systemd-run --scope` creates the scope and then execs the program in the
+same process, so it starts exactly as before: the launcher's environment,
+the entry's `Path=` (or the launcher's working directory), the `Exec=`
+arguments with field codes dropped, stdin from `/dev/null`.
+
+Without `systemd-run` or a running user manager (checked by its socket,
+`$XDG_RUNTIME_DIR/systemd/private`), or with `LINE_LAUNCHER_SCOPE=0` in the
+launcher's environment, programs are started directly, as before. Piped
+menus print the chosen line and start nothing. `uwsm app` is not used.
+
+`systemd-cgls --user-unit app.slice` lists the scopes.
 
 ## Keyboard and mouse
 
@@ -512,8 +544,12 @@ nix flake check
 
 `tests/run.sh` runs headless (`QT_QPA_PLATFORM=offscreen`, isolated XDG
 directories): the CLI wrapper (argument validation, dmenu output,
-cancellation, `--daemon` and the IPC toggle with its fallbacks),
-`activation` (confirm and launch), `color` (CIEDE2000 and the accent choice),
+cancellation, `--daemon` and the IPC toggle with its fallbacks), the launch
+wrapper `launch-app.sh` (the `systemd-run --scope` call and its fallbacks,
+arguments, working directory and environment passed through), `launch`
+(every launch path for real -- applications with arguments and `Path=`,
+terminal applications, actions, `>` commands, a forking command -- each
+through its own scope), `activation` (confirm and launch), `color` (CIEDE2000 and the accent choice),
 `frame` (config layering, palette colours, the search field key map), `grid`
 (icons below the fold load on scroll), `panel` (the reset on every show),
 `search` (matching, ranking, history, actions, commands, dmenu, layout
@@ -584,6 +620,12 @@ against that.
 - **The resident launcher shows no or old applications, or launched apps
   miss programs.** Its environment is the systemd user manager's:
   compare `systemctl --user show-environment` with your session.
+- **Applications close when the launcher service restarts.** They were
+  started without a scope: `systemd-cgls --user-unit line-launcher.service`
+  should list nothing but Quickshell. Check that `systemd-run` is on the
+  service's `PATH` and that `LINE_LAUNCHER_SCOPE` is not `0`. Applications
+  started before an update to a version with scopes stay in the old
+  cgroup until they exit.
 
 ## Credits
 

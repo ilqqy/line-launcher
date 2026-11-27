@@ -12,7 +12,7 @@ Item {
     property string name: ""
     // Its first letter labels the drawn fallback.
     property string label: ""
-    property real size: Theme.iconSize
+    property real size: Theme.rowIconSize
     // False holds the theme lookup back; the slot shows the plain soft tile
     // until it turns true. Once requested, an icon stays loaded.
     property bool active: true

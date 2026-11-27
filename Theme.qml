@@ -291,59 +291,42 @@ Singleton {
 
     // The configured font (programs.line-launcher.font), else Inter.
     readonly property string uiFont: root.fontFamily !== "" ? root.fontFamily : "Inter"
-    // Inter ships an optical-size cut for large text, as SF has Display.
-    readonly property string displayFont: root.uiFont === "Inter" ? "Inter Display" : root.uiFont
 
-    readonly property int searchFontSize: 22
-    readonly property int searchFontWeight: Font.Light
-    readonly property int labelFontSize: 12
-    readonly property int chipFontSize: 13
-    readonly property int chipFontWeight: Font.Medium
+    readonly property int searchFontSize: 18
+    readonly property int searchFontWeight: Font.Normal
     readonly property int rowFontSize: 14
+    readonly property int accessoryFontSize: 13
     readonly property int sectionFontSize: 12
-    readonly property int sectionFontWeight: Font.DemiBold
-    readonly property int emptyTitleSize: 15
+    readonly property int sectionFontWeight: Font.Medium
+    readonly property int emptyTitleSize: 14
     readonly property int emptyBodySize: 13
 
     // -------------------------------------------------------------- colour
 
-    // Text and glyphs are white or black at fixed alphas, as on macOS, so they
-    // keep their contrast over whatever the blur brings through.
+    // Text and glyphs are white or black at fixed alphas, so they keep their
+    // contrast over whatever the blur brings through.
     readonly property color ink: root.dark ? "#ffffff" : "#000000"
     readonly property color textPrimary: Qt.alpha(root.ink, root.dark ? 0.92 : 0.86)
-    readonly property color textSecondary: Qt.alpha(root.ink, root.dark ? 0.58 : 0.54)
-    readonly property color textTertiary: Qt.alpha(root.ink, root.dark ? 0.36 : 0.32)
-    readonly property color placeholder: Qt.alpha(root.ink, root.dark ? 0.40 : 0.34)
+    readonly property color textSecondary: Qt.alpha(root.ink, root.dark ? 0.52 : 0.52)
+    readonly property color textTertiary: Qt.alpha(root.ink, root.dark ? 0.36 : 0.36)
+    readonly property color placeholder: Qt.alpha(root.ink, root.dark ? 0.36 : 0.36)
     readonly property color glyph: root.textSecondary
 
-    // The glass. Tinted with the palette background so the panel sits in the
-    // wallpaper's colour family; Hyprland's layer blur supplies the frost.
+    // The panel. Tinted with the palette background so it sits in the
+    // wallpaper's colour family; Hyprland's layer blur shows faintly through.
     // The fill alpha must stay above the layer rule's ignore_alpha (0.15) or
     // the blur is dropped.
-    readonly property real panelOpacity: root.dark ? 0.60 : 0.72
+    readonly property real panelOpacity: root.dark ? 0.82 : 0.86
     readonly property color panelFill: Qt.alpha(root.background, root.panelOpacity)
-    readonly property color panelBorder: root.dark ? Qt.alpha("#ffffff", 0.10) : Qt.alpha("#000000", 0.08)
-    readonly property color divider: Qt.alpha(root.ink, root.dark ? 0.09 : 0.08)
+    readonly property color panelBorder: root.dark ? Qt.alpha("#ffffff", 0.12) : Qt.alpha("#000000", 0.10)
+    readonly property color divider: Qt.alpha(root.ink, root.dark ? 0.08 : 0.08)
 
     // Kept below ignore_alpha (0.15): a shadow pixel above it would get the
     // blur behind it too, and the shadow would turn into a frosted halo.
     readonly property color shadowColor: Qt.rgba(0, 0, 0, root.dark ? 0.14 : 0.10)
 
-    readonly property color selectionFill: Qt.alpha(root.ink, root.dark ? 0.13 : 0.08)
-    readonly property color dangerFill: Qt.alpha(root.danger, 0.24)
-
-    readonly property color chipFill: Qt.alpha(root.ink, root.dark ? 0.07 : 0.05)
-    readonly property color chipHoverFill: Qt.alpha(root.ink, root.dark ? 0.13 : 0.10)
-    readonly property color chipText: root.textSecondary
-    readonly property color chipActiveFill: root.activeAccent
-    // Relative luminance of the accent decides the label on it.
-    readonly property real accentLuminance:
-        0.2126 * root.activeAccent.r + 0.7152 * root.activeAccent.g + 0.0722 * root.activeAccent.b
-    readonly property color chipActiveText: root.accentLuminance > 0.65 ? Qt.alpha("#000000", 0.85) : "#ffffff"
-
-    readonly property color clearFill: Qt.alpha(root.ink, root.dark ? 0.26 : 0.22)
-    readonly property color clearHoverFill: Qt.alpha(root.ink, root.dark ? 0.40 : 0.34)
-    readonly property color clearGlyph: root.dark ? Qt.alpha("#000000", 0.75) : "#ffffff"
+    readonly property color selectionFill: Qt.alpha(root.ink, root.dark ? 0.10 : 0.07)
+    readonly property color dangerFill: Qt.alpha(root.danger, 0.22)
 
     readonly property color caret: root.activeAccent
     readonly property color textSelection: Qt.alpha(root.activeAccent, 0.35)
@@ -352,62 +335,47 @@ Singleton {
 
     // --------------------------------------------------------------- radii
 
-    readonly property int radiusPanel: 20
-    readonly property int radiusTile: 14
-    readonly property int radiusRow: 10
+    readonly property int radiusPanel: 12
+    readonly property int radiusRow: 8
 
     // ------------------------------------------------------ sizes, spacing
 
-    readonly property int panelPadding: 20
-    readonly property int panelBottomPadding: 10
+    readonly property int panelWidth: 750
+    readonly property int panelPadding: 16
     // Where the panel's centre sits, as a fraction of the free height above
     // it: a little above the middle, at the optical centre.
-    readonly property real panelVerticalBias: 0.42
+    readonly property real panelVerticalBias: 0.38
 
     readonly property int searchHeight: 56
-    readonly property int searchGlyphSize: 20
     readonly property int searchGap: 12
-    readonly property int clearSize: 18
 
-    readonly property int sectionGap: 12
-    readonly property int chipHeight: 28
-    readonly property int chipPaddingX: 13
-    readonly property int chipSpacing: 6
-
-    readonly property int gridColumns: 5
-    readonly property int cellWidth: 120
-    readonly property int cellHeight: 116
-    readonly property int tileInset: 4
-    readonly property int iconSize: 56
-    readonly property int iconTop: 14
-    readonly property int iconLabelGap: 8
-    readonly property int labelLines: 2
-    readonly property int labelSidePadding: 8
-    // A fraction of a row past the third, so the cut-off row under the edge
-    // fade says "this scrolls".
-    readonly property real gridVisibleRows: 3.4
-    readonly property int pageRows: 3
-
+    // The results list. Rows sit `listInset` in from the panel's sides, with
+    // their content another `rowPaddingX` in, so text lines up with the field.
+    readonly property int listInset: 8
+    readonly property int listPaddingY: 6
+    readonly property int sectionHeight: 30
     readonly property int rowHeight: 40
-    readonly property int rowSpacing: 2
-    readonly property int rowIconSize: 22
-    readonly property int rowPaddingX: 12
-    readonly property int listInset: 10
+    readonly property int rowSpacing: 0
+    readonly property int rowIconSize: 20
+    readonly property int rowPaddingX: 8
+    readonly property int rowIconGap: 12
+    // 8.5 rows under the header: the cut-off half row says "this scrolls".
+    readonly property real listVisibleRows: 8.5
     readonly property int listPageRows: 8
 
-    readonly property int fadeSize: 28
     readonly property int shadowBlur: 48
     readonly property int shadowOffsetY: 16
 
-    readonly property int emptyGlyphSize: 40
+    readonly property int emptyGlyphSize: 28
+    // The revealed area when a query matches nothing.
+    readonly property int emptyHeight: 128
 
-    // Derived layout, top to bottom: field, hairline, chips, results.
-    readonly property int chipsY: root.searchHeight + 1 + root.sectionGap
-    readonly property int resultsY: root.chipsY + root.chipHeight + 10
-    readonly property int gridWidth: root.gridColumns * root.cellWidth
-    readonly property int resultsHeight: Math.round(root.cellHeight * root.gridVisibleRows)
-    readonly property int panelWidth: root.gridWidth + 2 * root.panelPadding
-    readonly property int panelHeight: root.resultsY + root.resultsHeight + root.panelBottomPadding
+    // Derived layout, top to bottom: field, hairline, results. The panel is
+    // `searchHeight` tall collapsed and at most `panelHeight` expanded.
+    readonly property int resultsY: root.searchHeight + 1
+    readonly property int resultsHeight: Math.round(2 * root.listPaddingY + root.sectionHeight
+        + root.listVisibleRows * root.rowHeight)
+    readonly property int panelHeight: root.resultsY + root.resultsHeight
 
     // --------------------------------------------------------------- icons
 
@@ -422,15 +390,17 @@ Singleton {
     // the earlier of the two.
     readonly property int openDuration: 150
     readonly property int closeDuration: 110
-    readonly property real closedScale: 0.96
+    readonly property real closedScale: 0.97
 
-    readonly property int highlightDuration: 140
+    // Expanding to show results and collapsing back; the results fade in
+    // over a little less.
+    readonly property int expandDuration: 180
+    readonly property int revealFadeDuration: 140
+
+    readonly property int highlightDuration: 110
     readonly property int minTravel: 33
-    readonly property int scrollDuration: 180
-    readonly property int chipDuration: 180
-    readonly property int hoverDuration: 120
+    readonly property int scrollDuration: 160
+    readonly property int hoverDuration: 100
     readonly property int fadeDuration: 120
-    readonly property int pressDuration: 90
-    readonly property real pressedScale: 0.92
     readonly property int caretBlink: 530
 }

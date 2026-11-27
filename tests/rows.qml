@@ -1,9 +1,10 @@
-// Headless assertions for AppGrid's lazy icon loading: tiles built below the
-// fold hold their icon lookup back until their row scrolls into view, and
-// keep the icon once it has been requested.
+// Headless assertions for ResultRows: rows built below the fold hold their
+// icon lookup back until they scroll into view, and keep the icon once it has
+// been requested; keyboard reveal brings a row (and, for the first, the
+// section header) into view.
 //
-// Run through tests/run.sh. A GridView only lays out inside a window, so the
-// grid sits in a FloatingWindow on the offscreen platform.
+// Run through tests/run.sh. A ListView only lays out inside a window, so the
+// list sits in a FloatingWindow on the offscreen platform.
 import QtQuick
 import Quickshell
 
@@ -19,13 +20,13 @@ ShellRoot {
             + (ok ? "" : "  expected " + expected + ", got " + actual));
     }
 
-    // Eight rows: the window shows Theme.gridVisibleRows of them, and
-    // cacheBuffer builds two more below.
+    // Far more rows than the window shows or cacheBuffer builds.
     readonly property var entries: {
         const list = [];
-        for (let i = 0; i < 8 * Theme.gridColumns; i++) {
+        for (let i = 0; i < 40; i++) {
             list.push({
                 "name": "App " + i,
+                "source": {"providerId": "drun"},
                 "payload": {"icon": "application-x-executable"}
             });
         }
@@ -33,30 +34,34 @@ ShellRoot {
     }
 
     FloatingWindow {
-        implicitWidth: Theme.gridWidth
+        implicitWidth: Theme.panelWidth
         implicitHeight: Theme.resultsHeight
 
-        AppGrid {
-            id: grid
+        ResultRows {
+            id: rows
             anchors.fill: parent
             entries: suite.entries
+            title: "Suggestions"
         }
     }
 
-    // The AppIcon inside the tile at `index`, or null if no tile is built.
-    function iconAt(index: int): var {
-        const tiles = grid.view.contentItem.children;
-        for (let i = 0; i < tiles.length; i++) {
-            const tile = tiles[i];
-            if (tile.index !== index || tile.iconActive === undefined) continue;
-            for (let j = 0; j < tile.children.length; j++) {
-                if (tile.children[j].requested !== undefined) return tile.children[j];
-            }
+    // The row delegate at `index`, or null if none is built.
+    function rowAt(index: int): var {
+        const items = rows.view.contentItem.children;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].index === index && items[i].iconActive !== undefined) return items[i];
         }
         return null;
     }
 
-    readonly property int belowFold: Math.ceil(Theme.gridVisibleRows) * Theme.gridColumns
+    // The AppIcon in the row at `index`, or null if no row is built.
+    function iconAt(index: int): var {
+        const row = suite.rowAt(index);
+        return row ? row.iconItem : null;
+    }
+
+    // The first row that starts below the visible part of the list.
+    readonly property int belowFold: Math.ceil((rows.view.height - Theme.sectionHeight) / rows.step)
 
     property int step: 0
 
@@ -66,6 +71,10 @@ ShellRoot {
         running: true
         onTriggered: {
             if (suite.step === 0) {
+                suite.check("the list starts at its header",
+                    rows.view.contentY, -Theme.sectionHeight);
+                const row = suite.rowAt(0);
+                suite.check("a row shows its name", row && row.modelData.name, "App 0");
                 const first = suite.iconAt(0);
                 const partial = suite.iconAt(suite.belowFold - 1);
                 const hidden = suite.iconAt(suite.belowFold);
@@ -76,15 +85,17 @@ ShellRoot {
                 suite.check("row below the fold holds its icon back", hidden && hidden.requested, false);
                 suite.check("a held-back icon is not reported missing", hidden && hidden.missing, false);
                 suite.check("a held-back icon has no source", hidden && hidden.source, "");
-                grid.view.contentY = 2 * Theme.cellHeight;
+                rows.view.contentY = 4 * rows.step;
             } else if (suite.step === 1) {
                 const shown = suite.iconAt(suite.belowFold);
                 suite.check("row scrolled into view requests its icon", shown && shown.requested, true);
                 suite.check("its source is resolved", shown && shown.source !== "", true);
-                grid.view.contentY = 0;
+                rows.reveal(0);
             } else {
                 const kept = suite.iconAt(suite.belowFold);
                 suite.check("scrolled back out, the icon stays requested", kept && kept.requested, true);
+                suite.check("revealing the first row brings the header back",
+                    rows.view.contentY, rows.view.originY);
 
                 console.log(suite.failures === 0
                     ? "PASS"

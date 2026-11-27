@@ -366,9 +366,10 @@ ShellRoot {
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
         WlrLayershell.namespace: Config.namespace
 
-        // Anchoring all four sides gives a full-screen surface: the panel
-        // sits in the middle of it, the open/close scale never clips, and a
-        // click anywhere outside the panel lands here and dismisses it.
+        // Anchoring all four sides gives a full-screen surface of a fixed
+        // size: the panel sits in the middle of it, the open/close scale
+        // never clips, and expanding or collapsing the panel never resizes
+        // the surface -- only what is drawn on it changes.
         exclusionMode: ExclusionMode.Ignore
         anchors {
             top: true
@@ -401,10 +402,19 @@ ShellRoot {
             }
         }
 
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.AllButtons
-            onClicked: shell.close(shell.closeFade)
+        // Input reaches the surface only where the panel is, so everything
+        // else -- including the space below a collapsed bar -- passes clicks
+        // through to the windows underneath.
+        mask: Region {
+            item: frame.container
+        }
+
+        // With the rest of the surface click-through, a click outside the
+        // panel is seen as the grab being cleared, and closes the launcher.
+        HyprlandFocusGrab {
+            windows: [window]
+            active: shell.hyprlandAvailable && window.visible && shell.closing === shell.closeNone
+            onCleared: shell.close(shell.closeFade)
         }
 
         // Open is a fade and a small scale-up; close is the same run
@@ -449,6 +459,9 @@ ShellRoot {
             // Closed is the base state; priming is an instant 1% within it.
             opacity: shell.entered && !stage.primed ? 0.01 : 0
             scale: Theme.closedScale
+            // The stage is as tall as the expanded panel; scaling about its
+            // top keeps a collapsed bar from drifting during the open.
+            transformOrigin: Item.Top
 
             // A state with a transition each way, rather than Behaviors, so
             // each direction always gets its own curve: a Behavior reads its
@@ -492,19 +505,12 @@ ShellRoot {
                 confirming: shell.confirming
                 closing: shell.closing !== shell.closeNone
 
-                applications: {
-                    for (let i = 0; i < shell.providers.length; i++) {
-                        const provider = shell.providers[i];
-                        if (provider.providerId === "drun")
-                            return provider.available ? provider.prepared : [];
-                    }
-                    return [];
-                }
-
-                gridMode: !Config.dmenuMode && shell.activeProvider === null
+                appMode: !Config.dmenuMode && shell.activeProvider === null
                 showRowIcons: !Config.dmenuMode
                 listTitle: Config.dmenuMode ? (Config.prompt || qsTr("Items")) : qsTr("Commands")
-                placeholder: Config.prompt !== "" ? Config.prompt : qsTr("Search")
+                placeholder: Config.prompt !== ""
+                    ? Config.prompt
+                    : (Config.dmenuMode ? qsTr("Search…") : qsTr("Search for apps and commands…"))
 
                 onSelectRequested: index => {
                     if (shell.closing === shell.closeNone) shell.currentIndex = index;

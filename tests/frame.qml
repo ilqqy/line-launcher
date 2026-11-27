@@ -44,12 +44,8 @@ ShellRoot {
 
             onMoveUp: suite.record("up")
             onMoveDown: suite.record("down")
-            onMoveLeft: suite.record("left")
-            onMoveRight: suite.record("right")
             onPageUp: suite.record("pageup")
             onPageDown: suite.record("pagedown")
-            onNextCategory: suite.record("next")
-            onPreviousCategory: suite.record("previous")
             onAccepted: suite.record("accepted")
             onCancelled: suite.record("cancelled")
         }
@@ -82,10 +78,7 @@ ShellRoot {
             suite.check("activeAccent tracks accent", Theme.activeAccent, Theme.accent);
 
             // --- the keymap -----------------------------------------------
-            // Without category chips (dmenu, ">" commands) Tab keeps moving
-            // the selection, and arrows are left to the text field.
-            frame.tabCyclesCategories = false;
-            frame.arrowsNavigate = false;
+            // Tab moves the selection; Left and Right belong to the text field.
             suite.check("Tab moves down", suite.pressed(Qt.Key_Tab, Qt.NoModifier), "down");
             suite.check("Shift+Tab moves up",
                 suite.pressed(Qt.Key_Tab, Qt.ShiftModifier), "up");
@@ -100,28 +93,12 @@ ShellRoot {
             // A plain letter is consumed by neither.
             suite.check("a plain letter is left to the field",
                 frame.handleKey(Qt.Key_A, Qt.NoModifier), false);
-            suite.check("Left is left to the field without a grid",
+            suite.check("Left is left to the field",
                 frame.handleKey(Qt.Key_Left, Qt.NoModifier), false);
+            suite.check("Right is left to the field",
+                frame.handleKey(Qt.Key_Right, Qt.NoModifier), false);
             suite.check("PageDown pages", suite.pressed(Qt.Key_PageDown, Qt.NoModifier), "pagedown");
             suite.check("PageUp pages", suite.pressed(Qt.Key_PageUp, Qt.NoModifier), "pageup");
-
-            // With chips and a non-empty grid, Tab walks the categories and
-            // plain Left/Right walk the grid; Shift/Ctrl+arrows still edit.
-            frame.tabCyclesCategories = true;
-            frame.arrowsNavigate = true;
-            suite.check("Tab cycles categories", suite.pressed(Qt.Key_Tab, Qt.NoModifier), "next");
-            suite.check("Shift+Tab cycles back",
-                suite.pressed(Qt.Key_Tab, Qt.ShiftModifier), "previous");
-            suite.check("Backtab cycles back",
-                suite.pressed(Qt.Key_Backtab, Qt.ShiftModifier), "previous");
-            suite.check("Left moves in the grid", suite.pressed(Qt.Key_Left, Qt.NoModifier), "left");
-            suite.check("Right moves in the grid", suite.pressed(Qt.Key_Right, Qt.NoModifier), "right");
-            suite.check("Shift+Left is left to the field",
-                frame.handleKey(Qt.Key_Left, Qt.ShiftModifier), false);
-            suite.check("Ctrl+Right is left to the field",
-                frame.handleKey(Qt.Key_Right, Qt.ControlModifier), false);
-            suite.check("Down still moves down in the grid",
-                suite.pressed(Qt.Key_Down, Qt.NoModifier), "down");
 
             // --- resident --------------------------------------------------
             suite.check("resident flag is set by the runner",

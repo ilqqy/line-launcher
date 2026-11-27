@@ -1,8 +1,8 @@
 import QtQuick
 
-// Spotlight's field: a magnifier, a large light-weight query and a clear
-// button. No box of its own -- the panel is its frame, and a hairline under it
-// separates it from the results.
+// The search bar: one large query on the panel itself, no box of its own --
+// the panel is its frame, and a hairline under it separates it from the
+// results.
 Item {
     id: root
 
@@ -10,44 +10,26 @@ Item {
     readonly property alias inputItem: input
 
     property string placeholder: ""
-    // Set by the panel: Tab walks the category chips when there are any, and
-    // Left/Right walk the grid while it has something in it. Otherwise both
-    // keep their old meaning (Tab moves the selection, arrows move the caret).
-    property bool tabCyclesCategories: false
-    property bool arrowsNavigate: false
 
     signal accepted()
     signal cancelled()
     signal moveUp()
     signal moveDown()
-    signal moveLeft()
-    signal moveRight()
     signal pageUp()
     signal pageDown()
-    signal nextCategory()
-    signal previousCategory()
     // Emitted for every key press, so the shell can drop out of the confirm
     // state on "any other key".
     signal keyActivity(int key, int modifiers)
 
     implicitHeight: Theme.searchHeight
 
-    MagnifierGlyph {
-        id: glyph
-
-        x: Theme.panelPadding
-        anchors.verticalCenter: parent.verticalCenter
-        size: Theme.searchGlyphSize
-        color: Theme.glyph
-    }
-
     TextInput {
         id: input
 
-        anchors.left: glyph.right
-        anchors.leftMargin: Theme.searchGap
-        anchors.right: clear.left
-        anchors.rightMargin: Theme.searchGap
+        anchors.left: parent.left
+        anchors.leftMargin: Theme.listInset + Theme.rowPaddingX
+        anchors.right: parent.right
+        anchors.rightMargin: Theme.listInset + Theme.rowPaddingX
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         verticalAlignment: TextInput.AlignVCenter
@@ -58,7 +40,7 @@ Item {
         color: Theme.textPrimary
         selectionColor: Theme.textSelection
         selectedTextColor: Theme.textPrimary
-        font.family: Theme.displayFont
+        font.family: Theme.uiFont
         font.pixelSize: Theme.searchFontSize
         font.weight: Theme.searchFontWeight
 
@@ -118,69 +100,6 @@ Item {
         font: input.font
     }
 
-    Item {
-        id: clear
-
-        readonly property bool shown: input.text.length > 0
-
-        anchors.right: parent.right
-        anchors.rightMargin: Theme.panelPadding
-        anchors.verticalCenter: parent.verticalCenter
-        width: Theme.clearSize
-        height: Theme.clearSize
-
-        opacity: clear.shown ? 1 : 0
-        scale: clear.shown ? 1 : 0.7
-        visible: clear.opacity > 0.01
-
-        Behavior on opacity {
-            NumberAnimation { duration: Theme.hoverDuration; easing.type: Easing.OutCubic }
-        }
-        Behavior on scale {
-            NumberAnimation { duration: Theme.hoverDuration; easing.type: Easing.OutCubic }
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            radius: width / 2
-            color: clearMouse.containsMouse ? Theme.clearHoverFill : Theme.clearFill
-
-            Behavior on color {
-                ColorAnimation { duration: Theme.hoverDuration }
-            }
-        }
-
-        Repeater {
-            model: [45, -45]
-
-            Rectangle {
-                required property real modelData
-
-                anchors.centerIn: parent
-                width: Math.round(clear.width * 0.46)
-                height: 1.6
-                radius: 0.8
-                rotation: modelData
-                color: Theme.clearGlyph
-                antialiasing: true
-            }
-        }
-
-        MouseArea {
-            id: clearMouse
-
-            anchors.fill: parent
-            anchors.margins: -6
-            enabled: clear.shown
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                input.clear();
-                input.forceActiveFocus();
-            }
-        }
-    }
-
     // ---------------------------------------------------------------- API
 
     // The whole keymap, in one place and off the event object, so it can be
@@ -208,10 +127,7 @@ Item {
         // with Shift still set, so both spellings go backwards.
         const backtab = key === Qt.Key_Backtab || (key === Qt.Key_Tab && shift);
         if (key === Qt.Key_Tab || backtab) {
-            if (root.tabCyclesCategories) {
-                if (backtab) root.previousCategory();
-                else root.nextCategory();
-            } else if (backtab) {
+            if (backtab) {
                 root.moveUp();
             } else {
                 root.moveDown();
@@ -226,15 +142,6 @@ Item {
 
         if (key === Qt.Key_Down || (ctrl && key === Qt.Key_N)) {
             root.moveDown();
-            return true;
-        }
-
-        // Plain Left/Right only: Shift extends the text selection and Ctrl
-        // jumps words, as in any field.
-        if (root.arrowsNavigate && !shift && !ctrl
-                && (key === Qt.Key_Left || key === Qt.Key_Right)) {
-            if (key === Qt.Key_Left) root.moveLeft();
-            else root.moveRight();
             return true;
         }
 

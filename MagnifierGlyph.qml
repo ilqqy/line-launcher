@@ -5,7 +5,7 @@ import QtQuick
 Item {
     id: root
 
-    property real size: Theme.searchGlyphSize
+    property real size: 20
     property color color: Theme.glyph
     property real stroke: Math.max(1.5, root.size * 0.1)
 

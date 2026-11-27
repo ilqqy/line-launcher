@@ -1,8 +1,9 @@
 # line-launcher
 
 An application launcher for Hyprland, written in [Quickshell](https://quickshell.org),
-styled after macOS: a Spotlight-style search field over a Launchpad-style
-icon grid, in one centred translucent panel blurred by the compositor. It
+laid out as a command palette in the style of Raycast: a search bar over
+one list of results, in one centred translucent panel blurred by the
+compositor. It
 replaces rofi for applications, shell commands, custom actions and
 `rofi -dmenu` pipelines such as `cliphist`.
 
@@ -30,12 +31,14 @@ replaces rofi for applications, shell commands, custom actions and
 - One ranked list for applications, custom actions and shell commands;
   applications and actions rank above command candidates.
 - English/Russian keyboard-layout fallback: `вшысщкв` finds Discord.
-- Category chips derived from `.desktop` `Categories=`, "All" first.
-- A 5-column icon grid with edge fades and a gliding selection highlight.
+- Opens as the search bar alone and expands downward, 180 ms, to fit the
+  results once you type; clearing the query collapses it again.
+- A single result list: icon and name per row, a gliding selection
+  highlight, and a section header naming what is shown.
 - Shell-command mode (`>` prefix) and dmenu mode (piped stdin, e.g. the
-  clipboard picker), both shown as Spotlight-style rows.
+  clipboard picker) in the same list.
 - Confirm-before-running for dangerous actions.
-- Open: fade and scale-up (0.96 to 1, 150 ms ease-out). Close: the reverse
+- Open: fade and scale-up (0.97 to 1, 150 ms ease-out). Close: the reverse
   (110 ms ease-in).
 - Light or dark following the active pywal, wallust or matugen palette, with
   an automatically chosen readable accent; palette changes apply live.
@@ -108,11 +111,8 @@ used, the per-user file overrides the system one key by key.
 
 ### Fonts
 
-The panel uses Inter, and Inter Display (Inter's large optical size, shipped
-in the same `inter` package) for the search field. `programs.line-launcher.font`
-sets the family; when it is null, `"Inter"` is requested anyway. Inter Display
-is used only while the family is `Inter`; any other family is used for the
-field as well. Install the font yourself, for example with `pkgs.inter` in
+The panel uses Inter throughout. `programs.line-launcher.font` sets the
+family; when it is null, `"Inter"` is requested anyway. Install the font yourself, for example with `pkgs.inter` in
 `fonts.packages`. Without it, fontconfig substitutes another face.
 
 ### Icon theme
@@ -127,8 +127,8 @@ from `gtk-icon-theme-name` in `$XDG_CONFIG_HOME/gtk-3.0/settings.ini`, unless
 For each result the launcher asks for the entry's icon name or absolute path,
 falls back to the theme's `application-x-executable`, and, when neither
 resolves, draws a rounded tile with the entry's first letter. A placeholder
-tile holds the slot while an icon is loading, and grid rows below the fold
-look their icons up only once they scroll into view.
+tile holds the slot while an icon is loading, and rows below the fold look
+their icons up only once they scroll into view.
 
 ## Hyprland setup
 
@@ -151,7 +151,7 @@ hl.layer_rule({
 - `blur` blurs what is behind the panel.
 - `ignore_alpha = 0.15` is required. The launcher is a transparent
   full-screen layer surface; blur applies only where its alpha exceeds 0.15,
-  which is the panel (fill alpha 0.60 dark, 0.72 light) and not the shadow
+  which is the panel (fill alpha 0.82 dark, 0.86 light) and not the shadow
   (kept at 0.14 or less) or the empty screen.
 - `no_anim` disables Hyprland's layer animation; the launcher animates its own
   open and close, and the two would otherwise play on top of each other.
@@ -195,7 +195,7 @@ How it behaves:
   launcher over Quickshell IPC. When it is not running (not started, or
   between a crash and its restart) or does not answer, they start a one-off
   launcher exactly as without it.
-- Every show starts clean: empty query, "All", lists scrolled to the top,
+- Every show starts clean: empty query, collapsed, list scrolled to the top,
   the first result selected, no action waiting for confirmation, and the
   panel on the monitor that has focus at that moment.
 - Esc, a click outside, a launch and `--toggle` hide it with the normal close
@@ -244,17 +244,29 @@ Trade-offs:
 
 ### Layout
 
-A 640x511 panel, centred horizontally, slightly above the vertical centre of
-the focused monitor:
+A 750 px wide panel, centred horizontally, above the vertical centre of the
+focused monitor:
 
-1. Search field: magnifier, query, clear button (shown while there is text).
-2. Category chips.
-3. Results: a 5-column grid (about 3.4 rows visible, scrolling) for
-   applications, actions and commands found by ordinary search; rows for
-   dmenu lines and `>` command mode.
+1. Search bar: the query. The panel opens as this bar alone (56 px).
+2. Results: one scrolling list (about 8.5 rows visible) of everything that
+   matches, under a section header -- "Results" while searching, "Commands"
+   in `>` mode, "Items" (or the `--prompt` text) in dmenu mode. Each row
+   shows the icon and the name.
 
-The surface covers the whole monitor, so a click anywhere outside the panel
-reaches the launcher and closes it.
+Typing (anything but whitespace) expands the panel downward to fit the
+results, up to 433 px tall, and it follows their count as you type; a query
+with no matches leaves room for "No Results". Clearing the query collapses
+it back to the bar, with the list back at its top and the first result
+selected. Piped menus and `>` mode are always expanded. While collapsed,
+Up/Down/Tab/PageUp/PageDown and Enter do nothing.
+
+Only the panel's height animates, inside a fixed-size surface: the layer
+surface covers the whole monitor and is never resized, and the list keeps
+its full height under the panel's clip, so nothing is re-laid out per frame.
+The surface takes input only where the panel is drawn, so clicks anywhere
+else -- including just below a collapsed bar -- reach the windows
+underneath. On Hyprland, a click outside the panel closes the launcher
+(through a focus grab); elsewhere, close it with Esc.
 
 ### Search
 
@@ -262,30 +274,14 @@ Type to search. Results are shown in exactly the order the search engine
 returns them. Desktop entries marked `NoDisplay` are hidden and duplicate
 desktop IDs are removed.
 
-With an empty query only applications and actions that have been launched
-before are shown, most frecent first. On a fresh history the panel shows
-"Start Typing to Search".
+Recently launched applications still rank first, most frecent first, among
+the matches for what you type.
 
 If the query matches no application or action, the other keyboard layout
 (English/Russian) is tried; the text you typed stays in the field.
 
 Applications with `Terminal=true` run in `terminal` (or `$TERMINAL`); with
 neither set they run without a terminal and a warning is logged.
-
-### Categories
-
-Chips are built from the freedesktop main categories present among the
-installed applications: Development, Education, Games (`Game`), Graphics,
-Internet (`Network`), Media (`AudioVideo`, `Audio`, `Video`), Office,
-Science, Settings, System, Utilities (`Utility`). A chip exists only if at
-least one application has that category. Additional categories
-(`WebBrowser`, `TextEditor`, `GTK`, `X-...`) are not chips.
-
-A chip only hides results; it never reorders them. Actions and commands have
-no categories and appear under "All" only. Because the empty query lists only
-recently used applications, a chip with an empty query filters those: it
-shows "No Recent Apps in X" until you type. A chip with no matching results
-shows "No Results"; Enter then closes the launcher, as on an empty list.
 
 ### Shell commands
 
@@ -317,11 +313,11 @@ programs.line-launcher.actions = [
 
 Actions are matched by `name` and `exec` (`poweroff` finds "Power off") and
 are ranked with applications. `icon` (theme name or absolute path) is shown
-in the grid; without it the generic executable icon is used. `terminal = true`
+in the row; without it the generic executable icon is used. `terminal = true`
 runs the command in the configured terminal.
 
 With `confirm = true` the first Enter arms the action: the highlight turns
-the danger colour and the label reads "Press Enter to confirm". A second
+the danger colour and the row reads "Press Enter to confirm". A second
 Enter (or `Ctrl+m`) runs it. Holding Enter does not confirm; any other
 non-modifier key or a change of selection disarms it.
 
@@ -336,7 +332,7 @@ cliphist list | line-launcher | cliphist decode | wl-copy
 ```
 
 Lines are shown as rows under an "Items" header (or the `--prompt` text),
-without icons and without category chips. A line containing tabs shows its
+without icons. A line containing tabs shows its
 second column but returns the whole line, as rofi's `-display-columns 2` does
 for `cliphist`. Displayed lines are cut at `maxCharacters`.
 
@@ -375,19 +371,16 @@ menus print the chosen line and start nothing. `uwsm app` is not used.
 | Input | Action |
 | --- | --- |
 | typing | search |
-| `Up` / `Down`, `Ctrl+p` / `Ctrl+n` | grid: previous / next row (rows: previous / next row). Up on the top row stays; Down into a shorter last row lands on its last cell |
-| `Left` / `Right` | grid: previous / next cell in reading order (while the grid has results; otherwise the caret moves) |
-| `Shift` or `Ctrl` + arrows | edit the text as in any field |
-| `PageUp` / `PageDown` | grid: 3 rows; rows: 8 |
-| `Tab` / `Shift+Tab` | next / previous category chip, wrapping. In dmenu and `>` mode (no chips): next / previous result |
-| `Enter`, `Ctrl+m` | launch the selection (twice for `confirm = true` actions) |
+| `Up` / `Down`, `Ctrl+p` / `Ctrl+n` | previous / next result, stopping at either end |
+| `Left` / `Right` and their `Shift` / `Ctrl` forms | edit the text as in any field |
+| `PageUp` / `PageDown` | 8 results up / down |
+| `Tab` / `Shift+Tab` | next / previous result |
+| `Enter`, `Ctrl+m` | launch the selection (twice for `confirm = true` actions); nothing while collapsed |
 | `Esc` | close |
-| pointer motion over a tile or row | select it |
-| click a tile or row | launch it |
-| click a chip | switch category |
-| click the clear button | clear the query |
+| pointer motion over a row | select it |
+| click a row | launch it |
 | mouse wheel | scroll the results |
-| click outside the panel | close |
+| click outside the panel | close (Hyprland) |
 
 Hover selects only when the pointer actually moves, so a pointer resting
 where the panel opens does not take the selection from the keyboard.
@@ -486,12 +479,11 @@ palette file recolours a running launcher.
 
 - Light or dark: dark when the palette background's HSL lightness is below
   0.5. Text is white or black at fixed opacities in either mode.
-- Panel: the palette background at 60% opacity (dark) or 72% (light), a 1 px
+- Panel: the palette background at 82% opacity (dark) or 86% (light), a 1 px
   inner border, a soft shadow.
 - Accent: for pywal/wallust with `accentKey = "auto"`, whichever of
   `color1`...`color6` is furthest from the foreground in CIEDE2000; matugen
-  uses its `primary` role. Used for the active chip, the caret and text
-  selection. The chosen source and accent are printed to the log at startup.
+  uses its `primary` role. Used for the caret and text selection. The chosen source and accent are printed to the log at startup.
 
 The look is defined in [`Theme.qml`](Theme.qml), a singleton at the repo
 root. Below its palette parsing, the "design tokens" section holds every
@@ -499,12 +491,12 @@ value the panel draws with:
 
 | Group | Tokens (defaults) |
 | --- | --- |
-| type | `uiFont`, `displayFont`, `searchFontSize` 22 (Light), `labelFontSize` 12, `chipFontSize` 13, `rowFontSize` 14, `sectionFontSize` 12, `emptyTitleSize` 15, `emptyBodySize` 13 |
-| colour | `textPrimary`, `textSecondary`, `textTertiary`, `placeholder`, `glyph`, `panelOpacity`, `panelFill`, `panelBorder`, `divider`, `shadowColor`, `selectionFill`, `dangerFill`, `chipFill`, `chipHoverFill`, `chipText`, `chipActiveFill`, `chipActiveText`, `clearFill`, `clearHoverFill`, `clearGlyph`, `caret`, `textSelection`, `fallbackIconFill` |
-| radii | `radiusPanel` 20, `radiusTile` 14, `radiusRow` 10 |
-| sizes, spacing | `panelPadding` 20, `searchHeight` 56, `chipHeight` 28, `gridColumns` 5, `cellWidth` 120, `cellHeight` 116, `iconSize` 56, `gridVisibleRows` 3.4, `pageRows` 3, `rowHeight` 40, `listPageRows` 8, `fadeSize` 28, `shadowBlur` 48, `shadowOffsetY` 16, `panelVerticalBias` 0.42, and the rest of the group; `panelWidth`/`panelHeight` are derived |
+| type | `uiFont`, `searchFontSize` 18, `rowFontSize` 14, `accessoryFontSize` 13, `sectionFontSize` 12, `emptyTitleSize` 14, `emptyBodySize` 13 |
+| colour | `textPrimary`, `textSecondary`, `textTertiary`, `placeholder`, `glyph`, `panelOpacity`, `panelFill`, `panelBorder`, `divider`, `shadowColor`, `selectionFill`, `dangerFill`, `caret`, `textSelection`, `fallbackIconFill` |
+| radii | `radiusPanel` 12, `radiusRow` 8 |
+| sizes, spacing | `panelWidth` 750, `searchHeight` 56, `sectionHeight` 30, `rowHeight` 40, `rowIconSize` 20, `listVisibleRows` 8.5, `listPageRows` 8, `shadowBlur` 48, `shadowOffsetY` 16, `emptyHeight` 128, `panelVerticalBias` 0.38, and the rest of the group; `resultsHeight`/`panelHeight` (the expanded height) are derived |
 | icons | `fallbackIcon` (`application-x-executable`), `commandIcon` (`utilities-terminal`) |
-| durations (ms) | `openDuration` 150, `closeDuration` 110, `closedScale` 0.96, `highlightDuration` 140, `scrollDuration` 180, `chipDuration` 180, `hoverDuration` 120, `fadeDuration` 120, `pressDuration` 90, `caretBlink` 530 |
+| durations (ms) | `openDuration` 150, `closeDuration` 110, `closedScale` 0.97, `expandDuration` 180, `revealFadeDuration` 140, `highlightDuration` 110, `scrollDuration` 160, `hoverDuration` 100, `fadeDuration` 120, `caretBlink` 530 |
 
 To change the look, edit the tokens and restart the launcher (or rebuild the
 package). Colour tokens choose per mode with `root.dark ? <dark> : <light>`.
@@ -550,8 +542,10 @@ arguments, working directory and environment passed through), `launch`
 (every launch path for real -- applications with arguments and `Path=`,
 terminal applications, actions, `>` commands, a forking command -- each
 through its own scope), `activation` (confirm and launch), `color` (CIEDE2000 and the accent choice),
-`frame` (config layering, palette colours, the search field key map), `grid`
-(icons below the fold load on scroll), `panel` (the reset on every show),
+`frame` (config layering, palette colours, the search field key map), `rows`
+(row content, icons below the fold load on scroll, revealing the header),
+`panel` (collapsed and expanded heights, keys while collapsed, collapsing
+on a cleared query, the reset on every show),
 `search` (matching, ranking, history, actions, commands, dmenu, layout
 fallback), `detect` (palette auto-detection), `desktop-entries` (the
 application list following added and removed `.desktop` files and a profile

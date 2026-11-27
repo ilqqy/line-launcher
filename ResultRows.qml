@@ -1,11 +1,9 @@
 import QtQuick
-import QtQuick.Effects
 import Quickshell
-import "launchpad.js" as Launchpad
+import "entries.js" as Entries
 
-// Spotlight-style rows, for results that are text rather than applications:
-// piped dmenu lines and ">" commands. Same highlight, fade and scrolling
-// behaviour as the grid, one column.
+// The results list: a section header, then one row per result -- icon and
+// name -- with a single rounded highlight that glides between rows. It shows `entries` in the order given and reports rows by index.
 Item {
     id: root
 
@@ -13,6 +11,7 @@ Item {
     property int selectedIndex: -1
     property bool confirming: false
     property bool showIcons: true
+    property string title: ""
 
     signal rowHovered(int index, point scenePos)
     signal rowClicked(int index)
@@ -25,14 +24,41 @@ Item {
         id: list
 
         anchors.fill: parent
+        anchors.topMargin: Theme.listPaddingY
+        anchors.bottomMargin: Theme.listPaddingY
         spacing: Theme.rowSpacing
         boundsBehavior: Flickable.StopAtBounds
         clip: true
         cacheBuffer: Theme.rowHeight * 6
         reuseItems: true
 
+        // Diffed by identity, so a keystroke that keeps a result in the list
+        // keeps its delegate -- and its loaded icon -- too.
         model: ScriptModel {
             values: root.entries
+        }
+
+        // Scrolls with the rows. A ListView places its header before the
+        // first item, so rows still start at y = 0 and originY is negative.
+        header: Item {
+            width: list.width
+            height: root.entries.length > 0 && root.title !== "" ? Theme.sectionHeight : 0
+
+            Text {
+                x: Theme.rowPaddingX
+                width: parent.width - 2 * Theme.rowPaddingX
+                height: parent.height
+                visible: parent.height > 0
+                verticalAlignment: Text.AlignVCenter
+
+                text: root.title
+                textFormat: Text.PlainText
+                elide: Text.ElideRight
+                color: Theme.textSecondary
+                font.family: Theme.uiFont
+                font.pixelSize: Theme.sectionFontSize
+                font.weight: Theme.sectionFontWeight
+            }
         }
 
         delegate: Item {
@@ -42,6 +68,17 @@ Item {
             required property int index
             readonly property bool selected: row.index === root.selectedIndex
             readonly property bool armed: row.selected && root.confirming
+
+            // cacheBuffer builds rows below the fold ahead of a scroll. Their
+            // icons wait until the row is on screen: the image loader serves
+            // the newest request first, so they would otherwise load ahead of
+            // the icons that are actually visible.
+            readonly property bool iconActive: {
+                const top = row.index * root.step;
+                return top < list.contentY + list.height && top + Theme.rowHeight > list.contentY;
+            }
+            // Exposed for tests.
+            readonly property var iconItem: icon.item
 
             width: list.width
             height: Theme.rowHeight
@@ -58,40 +95,41 @@ Item {
 
                 sourceComponent: AppIcon {
                     size: Theme.rowIconSize
-                    name: Launchpad.iconFor(row.modelData, Theme.commandIcon)
+                    active: row.iconActive
+                    name: Entries.iconFor(row.modelData, Theme.commandIcon)
                     label: row.modelData ? row.modelData.name : ""
                 }
             }
 
             Text {
-                id: name
-
                 anchors.left: root.showIcons ? icon.right : parent.left
-                anchors.leftMargin: Theme.rowPaddingX
-                anchors.right: hint.visible ? hint.left : parent.right
-                anchors.rightMargin: Theme.rowPaddingX
+                anchors.leftMargin: root.showIcons ? Theme.rowIconGap : Theme.rowPaddingX
+                anchors.right: accessory.visible ? accessory.left : parent.right
+                anchors.rightMargin: Theme.rowPaddingX + (accessory.visible ? Theme.searchGap : 0)
                 anchors.verticalCenter: parent.verticalCenter
 
                 text: row.modelData ? row.modelData.name : ""
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
-                color: Theme.textPrimary
+                color: row.armed ? Theme.danger : Theme.textPrimary
                 font.family: Theme.uiFont
                 font.pixelSize: Theme.rowFontSize
             }
 
             Text {
-                id: hint
+                id: accessory
 
-                visible: row.armed
+                visible: text !== ""
                 anchors.right: parent.right
-                anchors.rightMargin: Theme.rowPaddingX
+                anchors.rightMargin: Theme.rowPaddingX + 2
                 anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("Press Enter to confirm")
+
+                // Only an action waiting for its second Enter says anything here.
+                text: row.armed ? qsTr("Press Enter to confirm") : ""
                 textFormat: Text.PlainText
                 color: Theme.danger
                 font.family: Theme.uiFont
-                font.pixelSize: Theme.labelFontSize
+                font.pixelSize: Theme.accessoryFontSize
             }
 
             MouseArea {
@@ -103,24 +141,11 @@ Item {
                 onClicked: root.rowClicked(row.index)
             }
         }
-
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            maskEnabled: true
-            maskSource: fade
-            maskThresholdMin: 0.5
-            maskSpreadAtMin: 1.0
-        }
     }
 
-    EdgeFadeMask {
-        id: fade
+    // ----------------------------------------------------------- highlight
 
-        anchors.fill: list
-        startStrength: list.atYBeginning ? 0 : 1
-        endStrength: list.atYEnd ? 0 : 1
-    }
-
+    // Lives in the list's content so it scrolls with the rows.
     Rectangle {
         id: highlight
 
@@ -143,6 +168,8 @@ Item {
         }
     }
 
+    // A new result set is a new page, not a move: the highlight lands on its
+    // row and the scroll returns to the top without travelling.
     property bool glide: true
 
     onEntriesChanged: root.resetScroll()
@@ -154,6 +181,9 @@ Item {
         Qt.callLater(() => root.glide = true);
     }
 
+    // Under key auto-repeat each move arrives before the last glide ends.
+    // Give each step the repeat's own interval so the highlight keeps up
+    // instead of trailing further behind with every step.
     property double lastMoveAt: 0
     property int travel: Theme.highlightDuration
 
@@ -166,6 +196,8 @@ Item {
         root.lastMoveAt = now;
     }
 
+    // --------------------------------------------------------------- scroll
+
     NumberAnimation {
         id: scroller
 
@@ -175,17 +207,19 @@ Item {
         easing.type: Easing.OutCubic
     }
 
+    // Scroll just enough to bring a row fully into view; the first row brings
+    // the header with it. Called for keyboard moves only; a hovered row is
+    // already where the pointer is.
     function reveal(index: int) {
         if (index < 0) return;
 
-        const top = index * root.step;
-        const bottom = top + Theme.rowHeight;
-        const margin = Theme.fadeSize;
+        const top = index === 0 ? list.originY : index * root.step;
+        const bottom = index * root.step + Theme.rowHeight;
         const maxY = Math.max(list.originY, list.originY + list.contentHeight - list.height);
 
         let y = scroller.running ? scroller.to : list.contentY;
-        if (top - margin < y) y = top - margin;
-        else if (bottom + margin > y + list.height) y = bottom + margin - list.height;
+        if (top < y) y = top;
+        else if (bottom > y + list.height) y = bottom - list.height;
         y = Math.max(list.originY, Math.min(maxY, y));
         if (Math.abs(y - list.contentY) < 0.5) return;
 

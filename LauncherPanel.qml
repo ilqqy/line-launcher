@@ -1,14 +1,19 @@
 import QtQuick
-import "launchpad.js" as Launchpad
+import QtQuick.Effects
 
-// The launcher's visible surface: Spotlight's field on top, Launchpad's grid
-// underneath, category chips between them.
+// The launcher's visible surface, laid out as a command palette: the search
+// bar on top and the results as one list underneath.
+//
+// It opens collapsed to the search bar alone and expands downward to reveal
+// the results once there is a query. Only `container`'s height animates; the
+// item itself, the list and the window under it keep their size, so nothing
+// is re-laid out or reallocated per frame -- the container's clip does the
+// reveal. The shell masks the window's input to `container`, so the space
+// below a collapsed bar passes clicks through.
 //
 // Presentation only. It is handed the shell's ranked list and selection and
-// never reorders either -- with "All" active the grid *is* the ranked list,
-// and any other chip only hides entries from it. Everything it wants done
-// goes back through signals, so the shell keeps owning the selection,
-// activation and closing.
+// shows them as they are. Everything it wants done goes back through
+// signals, so the shell keeps owning the selection, activation and closing.
 Item {
     id: root
 
@@ -16,15 +21,13 @@ Item {
 
     property var results: []
     // Index into `results`, i.e. the shell's currentIndex. -1 means nothing
-    // is selected, which is what a category with no matches asks for.
+    // is selected.
     property int currentIndex: 0
     property bool confirming: false
     property bool closing: false
-    // DrunProvider's candidate records; the chips are derived from these.
-    property var applications: []
-    // Applications and actions go in the grid; dmenu lines and ">" commands
-    // are text and go in rows.
-    property bool gridMode: true
+    // Ordinary search over applications, actions and commands. False for
+    // dmenu lines and ">" commands, which are titled with `listTitle`.
+    property bool appMode: true
     property bool showRowIcons: true
     property string listTitle: ""
     property string placeholder: ""
@@ -35,9 +38,13 @@ Item {
     // Exposed so tests can type and press keys without a compositor.
     readonly property alias field: field
     // Exposed so tests can scroll and read back the reset.
-    readonly property alias grid: grid
     readonly property alias rows: rows
-    readonly property alias categoryBar: categoryBar
+    // The visible panel; the window's input region.
+    readonly property alias container: container
+
+    // Results show while there is a query. Piped menus and ">" commands are
+    // lists in their own right and always show.
+    readonly property bool expanded: !root.appMode || root.text.trim().length > 0
 
     signal selectRequested(int index)
     signal accepted()
@@ -48,155 +55,67 @@ Item {
         field.focusInput();
     }
 
-    // Back to how a fresh launch looks: empty query, "All", every list at its
-    // start, and no remembered pointer position. The resident launcher calls
-    // this on every show; the shell resets its own selection.
+    // Back to how a fresh launch looks: empty query, the list at its start,
+    // and no remembered pointer position. The resident launcher calls this on
+    // every show; the shell resets its own selection.
     function reset() {
+        // Lands collapsed on the spot: a resident launcher resets while
+        // hidden, and must not replay the collapse on its next show.
+        root.animate = false;
         field.reset();
-        root.reselectPending = false;
-        root.category = Launchpad.allKey;
         root.lastPointer = Qt.point(-1, -1);
-        grid.resetScroll();
         rows.resetScroll();
-        categoryBar.resetScroll();
+        Qt.callLater(() => root.animate = true);
+    }
+
+    property bool animate: true
+
+    // Collapsing puts the list back at its top with the first result
+    // selected, so the next reveal starts clean.
+    onExpandedChanged: {
+        if (root.expanded) return;
+        rows.resetScroll();
+        if (!root.closing) root.selectRequested(0);
     }
 
     implicitWidth: Theme.panelWidth
     implicitHeight: Theme.panelHeight
 
-    // --------------------------------------------------------- categories
+    // The selection, -1 for none. Hidden results are never selected.
+    readonly property int selected: root.expanded && root.currentIndex >= 0 && root.currentIndex < root.results.length
+        ? root.currentIndex
+        : -1
 
-    readonly property var chips: Launchpad.chipsFor(root.applications)
-    property string category: Launchpad.allKey
-    readonly property bool filtering: root.gridMode && root.category !== Launchpad.allKey
-
-    // The same test, computed on the spot. Handlers that run as `category`
-    // or `gridMode` change cannot read `filtering`: its binding may not have
-    // re-evaluated yet when they fire.
-    function isFiltering(): bool {
-        return root.gridMode && root.category !== Launchpad.allKey;
-    }
-    readonly property var activeChip: {
-        for (let i = 0; i < root.chips.length; i++) {
-            if (root.chips[i].key === root.category) return root.chips[i];
-        }
-        return root.chips[0];
-    }
-
-    // ------------------------------------------------------- what is shown
-
-    function computeShown(): var {
-        if (!root.isFiltering()) return root.results;
-        const key = root.category;
-        return root.results.filter(entry => Launchpad.entryIn(entry, key));
-    }
-
-    readonly property var shown: root.computeShown()
-
-    // The selection as an index into `shown`, -1 for none.
-    readonly property int selected: {
-        const entry = root.currentIndex >= 0 ? root.results[root.currentIndex] : undefined;
-        if (entry === undefined) return -1;
-        return root.filtering ? root.shown.indexOf(entry) : root.currentIndex;
-    }
-
-    function select(viewIndex: int) {
-        if (root.closing) return;
-        const list = root.computeShown();
-        if (viewIndex < 0 || viewIndex >= list.length) return;
-        root.selectRequested(root.isFiltering() ? root.results.indexOf(list[viewIndex]) : viewIndex);
-    }
-
-    // Unfiltered, the first result is the shell's own resting choice (0, even
-    // with nothing there yet). Filtered, it is the first entry shown, or no
-    // selection at all, so Enter on an empty category behaves like Enter on
-    // an empty list.
-    function selectFirst() {
-        if (root.closing) return;
-        if (!root.isFiltering()) {
-            root.selectRequested(0);
-            return;
-        }
-        const list = root.computeShown();
-        root.selectRequested(list.length > 0 ? root.results.indexOf(list[0]) : -1);
-    }
-
-    // The shell puts the selection back on its first result whenever the
-    // query changes. Under a category that result may be hidden, so the
-    // selection moves on to the first one shown -- once the new list has
-    // settled, and before any key that reads the selection.
-    property bool reselectPending: false
-
-    onResultsChanged: {
-        if (!root.isFiltering()) return;
-        root.reselectPending = true;
-        Qt.callLater(root.flushReselect);
-    }
-
-    function flushReselect() {
-        if (!root.reselectPending) return;
-        root.reselectPending = false;
-        root.selectFirst();
-    }
-
-    // Category changes count from the first one the user makes; the initial
-    // value settling during construction is not a change.
-    property bool built: false
-    Component.onCompleted: root.built = true
-
-    onCategoryChanged: {
-        if (!root.built) return;
-        root.reselectPending = false;
-        root.selectFirst();
-    }
-
-    function cycleCategory(step: int) {
-        if (root.chips.length < 2) return;
-        let index = root.chips.indexOf(root.activeChip);
-        index = (index + step + root.chips.length) % root.chips.length;
-        root.category = root.chips[index].key;
+    function select(index: int) {
+        if (root.closing || !root.expanded) return;
+        if (index < 0 || index >= root.results.length) return;
+        root.selectRequested(index);
     }
 
     // ---------------------------------------------------------- navigation
 
-    // dx moves along the reading order, dy by whole rows. Up from the top row
-    // stays put; down into a short last row lands on its last cell.
-    function navigate(dx: int, dy: int) {
-        root.flushReselect();
-        if (root.closing) return;
+    // Moves the selection by `dy` rows, stopping at either end.
+    function navigate(dy: int) {
+        if (root.closing || !root.expanded) return;
 
-        const count = root.shown.length;
+        const count = root.results.length;
         if (count === 0) return;
 
         const current = root.selected;
-        let target;
-        if (current < 0) {
-            target = 0;
-        } else if (!root.gridMode) {
-            target = Math.max(0, Math.min(count - 1, current + dy));
-        } else if (dy !== 0) {
-            const columns = Theme.gridColumns;
-            const lastRow = Math.floor((count - 1) / columns);
-            const row = Math.floor(current / columns);
-            const targetRow = Math.max(0, Math.min(lastRow, row + dy));
-            target = Math.min(count - 1, targetRow * columns + current % columns);
-        } else {
-            target = Math.max(0, Math.min(count - 1, current + dx));
-        }
-
+        const target = current < 0 ? 0 : Math.max(0, Math.min(count - 1, current + dy));
         if (target === current) return;
         root.select(target);
-        if (root.gridMode) grid.reveal(target);
-        else rows.reveal(target);
+        rows.reveal(target);
     }
 
+    // Enter on a collapsed bar does nothing: there is nothing shown to run.
     function accept() {
-        root.flushReselect();
+        if (!root.expanded) return;
         root.accepted();
     }
 
     // Hover selects only when the pointer itself moved. Qt also reports hover
-    // when the panel opens under a resting pointer and when the grid scrolls
+    // when the panel opens under a resting pointer and when the list scrolls
     // beneath one; those arrive at the scene position already recorded, and
     // must not take the selection away from the keyboard.
     property point lastPointer: Qt.point(-1, -1)
@@ -210,140 +129,121 @@ Item {
 
     // ------------------------------------------------------------- surface
 
-    GlassPanel {
-        anchors.fill: parent
+    // How tall the revealed part is: the results' own height, up to the
+    // list's full height, or room for the empty-state message.
+    readonly property int revealHeight: {
+        const count = root.results.length;
+        if (count === 0) return Theme.emptyHeight;
+        const content = 2 * Theme.listPaddingY + Theme.sectionHeight + count * rows.step;
+        return Math.min(Theme.resultsHeight, content);
     }
 
-    // Keeps clicks on the glass from reaching the dismiss area behind it.
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.AllButtons
-    }
-
-    SearchField {
-        id: field
-
-        width: parent.width
-        height: Theme.searchHeight
-        placeholder: root.placeholder
-        tabCyclesCategories: root.gridMode && root.chips.length > 1
-        arrowsNavigate: root.gridMode && root.shown.length > 0
-
-        onAccepted: root.accept()
-        onCancelled: root.cancelled()
-        onKeyActivity: (key, modifiers) => root.keyActivity(key, modifiers)
-        onMoveUp: root.navigate(0, -1)
-        onMoveDown: root.navigate(0, 1)
-        onMoveLeft: root.navigate(-1, 0)
-        onMoveRight: root.navigate(1, 0)
-        onPageUp: root.navigate(0, -(root.gridMode ? Theme.pageRows : Theme.listPageRows))
-        onPageDown: root.navigate(0, root.gridMode ? Theme.pageRows : Theme.listPageRows)
-        onNextCategory: root.cycleCategory(1)
-        onPreviousCategory: root.cycleCategory(-1)
+    // Shader-drawn, so following the container's height costs no layer
+    // reallocation. It also lies under the fill; at the panel's opacity
+    // that adds about 2% darkening there, which does not read as a band.
+    RectangularShadow {
+        x: container.x
+        y: container.y + Theme.shadowOffsetY
+        width: container.width
+        height: container.height
+        radius: Theme.radiusPanel
+        blur: Theme.shadowBlur
+        color: Theme.shadowColor
     }
 
     Rectangle {
-        y: Theme.searchHeight
+        id: container
+
+        anchors.top: parent.top
         width: parent.width
-        height: 1
-        color: Theme.divider
-    }
+        height: root.expanded ? Theme.resultsY + root.revealHeight : Theme.searchHeight
+        radius: Theme.radiusPanel
+        color: Theme.panelFill
+        border.width: 1
+        border.color: Theme.panelBorder
+        clip: true
 
-    CategoryBar {
-        id: categoryBar
-
-        y: Theme.chipsY
-        width: parent.width
-        height: Theme.chipHeight
-        visible: root.gridMode
-
-        model: root.chips
-        activeKey: root.category
-        onActivated: key => root.category = key
-    }
-
-    Text {
-        x: Theme.panelPadding
-        y: Theme.chipsY
-        width: parent.width - 2 * Theme.panelPadding
-        height: Theme.chipHeight
-        visible: !root.gridMode
-        verticalAlignment: Text.AlignVCenter
-
-        text: root.listTitle
-        textFormat: Text.PlainText
-        elide: Text.ElideRight
-        color: Theme.textSecondary
-        font.family: Theme.uiFont
-        font.pixelSize: Theme.sectionFontSize
-        font.weight: Theme.sectionFontWeight
-    }
-
-    AppGrid {
-        id: grid
-
-        x: Theme.panelPadding
-        y: Theme.resultsY
-        width: Theme.gridWidth
-        height: Theme.resultsHeight
-        visible: root.gridMode
-
-        entries: root.gridMode ? root.shown : []
-        selectedIndex: root.selected
-        confirming: root.confirming
-
-        onTileHovered: (index, scenePos) => root.hover(index, scenePos)
-        onTileClicked: index => {
-            root.select(index);
-            root.accept();
+        Behavior on height {
+            enabled: root.animate
+            NumberAnimation { duration: Theme.expandDuration; easing.type: Easing.OutCubic }
         }
-    }
 
-    ResultRows {
-        id: rows
+        SearchField {
+            id: field
 
-        x: Theme.listInset
-        y: Theme.resultsY
-        width: parent.width - 2 * Theme.listInset
-        height: Theme.resultsHeight
-        visible: !root.gridMode
+            width: parent.width
+            height: Theme.searchHeight
+            placeholder: root.placeholder
 
-        entries: root.gridMode ? [] : root.shown
-        selectedIndex: root.selected
-        confirming: root.confirming
-        showIcons: root.showRowIcons
-
-        onRowHovered: (index, scenePos) => root.hover(index, scenePos)
-        onRowClicked: index => {
-            root.select(index);
-            root.accept();
+            onAccepted: root.accept()
+            onCancelled: root.cancelled()
+            onKeyActivity: (key, modifiers) => root.keyActivity(key, modifiers)
+            onMoveUp: root.navigate(-1)
+            onMoveDown: root.navigate(1)
+            onPageUp: root.navigate(-Theme.listPageRows)
+            onPageDown: root.navigate(Theme.listPageRows)
         }
-    }
 
-    EmptyState {
-        x: 0
-        y: Theme.resultsY
-        width: parent.width
-        height: Theme.resultsHeight
+        // The divider, header and rows sit below the bar, so the clip keeps
+        // them out of a collapsed panel; the fade softens the reveal.
+        Item {
+            id: revealed
 
-        readonly property string query: root.text.trim()
-        readonly property string scope: root.filtering ? root.activeChip.label : ""
+            y: Theme.searchHeight
+            width: parent.width
+            height: Theme.resultsHeight + 1
 
-        shown: root.shown.length === 0
-        title: {
-            if (query !== "") return qsTr("No Results");
-            if (root.filtering) return qsTr("No Recent Apps in %1").arg(scope);
-            if (!root.gridMode) return qsTr("Nothing to Show");
-            return qsTr("Start Typing to Search");
-        }
-        subtitle: {
-            if (query !== "") {
-                return root.filtering
-                    ? qsTr("Nothing in %1 matches “%2”").arg(scope).arg(query)
-                    : qsTr("Nothing matches “%1”").arg(query);
+            opacity: root.expanded ? 1 : 0
+            visible: opacity > 0
+
+            Behavior on opacity {
+                enabled: root.animate
+                NumberAnimation { duration: Theme.revealFadeDuration; easing.type: Easing.OutQuad }
             }
-            if (root.filtering) return qsTr("Type to search %1").arg(scope);
-            return root.gridMode ? qsTr("Apps you open will show up here") : "";
+
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: Theme.divider
+            }
+
+            // A fixed height, whatever the container's: resizing a ListView
+            // re-lays out and creates delegates on every frame.
+            ResultRows {
+                id: rows
+
+                x: Theme.listInset
+                y: 1
+                width: parent.width - 2 * Theme.listInset
+                height: Theme.resultsHeight
+
+                entries: root.results
+                selectedIndex: root.selected
+                confirming: root.confirming
+                showIcons: root.showRowIcons
+                title: {
+                    if (!root.appMode) return root.listTitle;
+                    return root.text.trim() === "" ? qsTr("Suggestions") : qsTr("Results");
+                }
+
+                onRowHovered: (index, scenePos) => root.hover(index, scenePos)
+                onRowClicked: index => {
+                    root.select(index);
+                    root.accept();
+                }
+            }
+
+            EmptyState {
+                y: 1
+                width: parent.width
+                height: Theme.emptyHeight
+
+                readonly property string query: root.text.trim()
+
+                shown: root.results.length === 0
+                title: query !== "" ? qsTr("No Results") : qsTr("Nothing to Show")
+                subtitle: query !== "" ? qsTr("Nothing matches “%1”").arg(query) : ""
+            }
         }
     }
 }
